@@ -1,0 +1,17 @@
+include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - example/*
+
+linter:
+  rules:
+    avoid_print: true
+    prefer_single_quotes: true
+    use_super_parameters: true
+    prefer_relative_imports: true
+
+formatter:
+  page_width: 120
+  trailing_commas: preserve
