@@ -20,6 +20,7 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<void> remove(String key) async {
+    validateKey(key);
     await backend.remove(encodeKey(key));
     notifyListeners(key);
   }
@@ -37,52 +38,73 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
   }
 
   @override
-  Future<bool> containsKey(String key) => backend.containsKey(encodeKey(key));
+  Future<bool> containsKey(String key) {
+    validateKey(key);
+    return backend.containsKey(encodeKey(key));
+  }
 
   @override
-  Future<String?> getString(String key) => backend.getString(encodeKey(key));
+  Future<String?> getString(String key) {
+    validateKey(key);
+    return backend.getString(encodeKey(key));
+  }
 
   @override
-  Future<int?> getInt(String key) => backend.getInt(encodeKey(key));
+  Future<int?> getInt(String key) {
+    validateKey(key);
+    return backend.getInt(encodeKey(key));
+  }
 
   @override
-  Future<double?> getDouble(String key) => backend.getDouble(encodeKey(key));
+  Future<double?> getDouble(String key) {
+    validateKey(key);
+    return backend.getDouble(encodeKey(key));
+  }
 
   @override
-  Future<bool?> getBool(String key) => backend.getBool(encodeKey(key));
+  Future<bool?> getBool(String key) {
+    validateKey(key);
+    return backend.getBool(encodeKey(key));
+  }
 
   @override
   Future<void> setString(String key, String value) async {
+    validateKey(key);
     await backend.setString(encodeKey(key), value);
     notifyListeners(key);
   }
 
   @override
   Future<void> setInt(String key, int value) async {
+    validateKey(key);
     await backend.setInt(encodeKey(key), value);
     notifyListeners(key);
   }
 
   @override
   Future<void> setDouble(String key, double value) async {
+    validateKey(key);
     await backend.setDouble(encodeKey(key), value);
     notifyListeners(key);
   }
 
   @override
   Future<void> setBool(String key, bool value) async {
+    validateKey(key);
     await backend.setBool(encodeKey(key), value);
     notifyListeners(key);
   }
 
   @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
+    validateKeys(allowList);
     final map = await backend.getAll(allowList?.map(encodeKey) ?? await getEncodedKeys());
     return {for (final entry in map.entries) decodeKey(entry.key): entry.value};
   }
 
   @override
   Future<void> setAll(Map<String, dynamic> values) async {
+    validateKeys(values.keys);
     final mapWithEncodedKeys = {
       for (final entry in values.entries) encodeKey(entry.key): entry.value,
     };
@@ -95,12 +117,14 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<void> setStringList(String key, List<String> value) async {
+    validateKey(key);
     await backend.setString(encodeKey(key), jsonEncode(value));
     notifyListeners(key);
   }
 
   @override
   Future<List<String>?> getStringList(String key) async {
+    validateKey(key);
     final String? dataString = await backend.getString(encodeKey(key));
     if (dataString == null) return null;
     return List<String>.from(jsonDecode(dataString) as List<dynamic>);
@@ -108,12 +132,14 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<void> setJson(String key, Map<String, dynamic> value) async {
+    validateKey(key);
     await backend.setString(encodeKey(key), jsonEncode(value));
     notifyListeners(key);
   }
 
   @override
   Future<Map<String, dynamic>?> getJson(String key) async {
+    validateKey(key);
     final jsonString = await backend.getString(encodeKey(key));
     if (jsonString == null) return null;
     return jsonDecode(jsonString) as Map<String, dynamic>;
@@ -121,12 +147,14 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<void> setJsonList(String key, List<Map<String, dynamic>> value) async {
+    validateKey(key);
     await backend.setString(encodeKey(key), jsonEncode(value));
     notifyListeners(key);
   }
 
   @override
   Future<List<Map<String, dynamic>>?> getJsonList(String key) async {
+    validateKey(key);
     final jsonString = await backend.getString(encodeKey(key));
     if (jsonString == null) return null;
     final List<dynamic> jsonList = jsonDecode(jsonString);
@@ -135,6 +163,7 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<DateTime?> getDateTime(String key, {bool isUtc = false}) async {
+    validateKey(key);
     final int? millis = await backend.getInt(encodeKey(key));
     if (millis == null) return null;
     final DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true);
@@ -143,6 +172,7 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<void> setDateTime(String key, DateTime value) async {
+    validateKey(key);
     await backend.setInt(
       encodeKey(key),
       value.isUtc ? value.millisecondsSinceEpoch : value.toUtc().millisecondsSinceEpoch,
@@ -152,6 +182,7 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<Duration?> getDuration(String key) async {
+    validateKey(key);
     final int? millis = await backend.getInt(encodeKey(key));
     if (millis == null) return null;
     return Duration(milliseconds: millis);
@@ -159,12 +190,14 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
 
   @override
   Future<void> setDuration(String key, Duration value) async {
+    validateKey(key);
     await backend.setInt(encodeKey(key), value.inMilliseconds);
     notifyListeners(key);
   }
 
   @override
   Future<void> removeAll(Iterable<String> keys) async {
+    validateKeys(keys);
     await backend.removeAll(keys.map(encodeKey));
     for (final key in keys) {
       notifyKeyListeners(key);
@@ -183,12 +216,15 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
     String key, {
     required FromJson<T> fromJson,
     required ToJson<T> toJson,
-  }) async => HyperStorageItemHolder<T>(
-    backend,
-    encodeKey(key),
-    key: key,
-    fromJson: fromJson,
-    toJson: toJson,
-    onChanged: () => notifyListeners(key),
-  );
+  }) async {
+    validateKey(key);
+    return HyperStorageItemHolder<T>(
+      backend,
+      encodeKey(key),
+      key: key,
+      fromJson: fromJson,
+      toJson: toJson,
+      onChanged: () => notifyListeners(key),
+    );
+  }
 }
