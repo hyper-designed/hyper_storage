@@ -43,7 +43,8 @@ class HyperStorage extends _StorageBase {
 
   static Future<StorageContainer> container(String name) async {
     if (instance._containers.containsKey(name)) return instance._containers[name]!;
-    return await instance.backend.container(name);
+    final container = await instance.backend.container(name);
+    return instance._containers[name] = container;
   }
 
   static Future<JsonStorageContainer<E>> jsonContainer<E>(
@@ -55,10 +56,11 @@ class HyperStorage extends _StorageBase {
     int? seed,
     String? delimiter,
   }) async {
-    if (instance._containers.containsKey(name)) {
-      if (instance._containers[name] case JsonStorageContainer<E> container) return container;
+    if (instance._objectContainers.containsKey(name)) {
+      final existing = instance._objectContainers[name]!;
+      if (existing case JsonStorageContainer<E>()) return existing;
 
-      throw StateError('Container with name $name already exists with different type.');
+      throw StateError('Container with name $name already exists with different type: ${existing.runtimeType}.');
     }
     final container = JsonStorageContainer<E>(
       backend: instance.backend,
@@ -77,9 +79,10 @@ class HyperStorage extends _StorageBase {
     String name, {
     required F Function() factory,
   }) async {
-    if (instance._containers.containsKey(name)) {
-      if (instance._containers[name] case F container) return container;
-      throw StateError('Container with name $name already exists with different type.');
+    if (instance._objectContainers.containsKey(name)) {
+      final existing = instance._objectContainers[name]!;
+      if (existing is F) return existing;
+      throw StateError('Container with name $name already exists with different type: ${existing.runtimeType}.');
     }
     final F container = factory();
     return instance._objectContainers[name] = container;
