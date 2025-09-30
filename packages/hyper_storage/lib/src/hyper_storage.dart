@@ -21,7 +21,7 @@ class HyperStorage extends _StorageBase {
   static HyperStorage? _instance;
 
   static HyperStorage get instance {
-    if (_instance == null) throw StateError('LocalStorage not initialized. Call LocalStorage.init() first.');
+    if (_instance == null) throw StateError('HyperStorage not initialized. Call HyperStorage.init() first.');
     return _instance!;
   }
 
