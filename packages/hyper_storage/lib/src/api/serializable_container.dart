@@ -40,6 +40,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
 
   @override
   Future<void> set(String key, E value) async {
+    validateKey(key);
     await backend.setString(encodeKey(key), serialize(value));
     notifyListeners(key);
   }
@@ -58,6 +59,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
 
   @override
   Future<void> setAll(Map<String, E> items) async {
+    validateKeys(items.keys);
     await backend.setAll(items.map((key, value) => MapEntry(encodeKey(key), serialize(value))));
     for (final key in items.keys) {
       notifyKeyListeners(key);
@@ -101,6 +103,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   @override
   Future<E?> get(String? key) async {
     if (key == null) return null;
+    validateKey(key);
     if (!await containsKey(key)) return null;
     final String? value = await backend.getString(encodeKey(key));
     if (value == null) return null;
@@ -109,6 +112,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
 
   @override
   Future<Map<String, E>> getAll([Iterable<String>? allowList]) async {
+    validateKeys(allowList);
     final Map<String, dynamic> allData = await backend.getAll(allowList?.map(encodeKey) ?? await getEncodedKeys());
     return <String, E>{
       for (final MapEntry(:key, :value) in allData.entries) decodeKey(key): deserialize(value.toString()),
@@ -122,13 +126,17 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   }
 
   @override
-  Future<bool> containsKey(String key) async => backend.containsKey(encodeKey(key));
+  Future<bool> containsKey(String key) async {
+    validateKey(key);
+    return backend.containsKey(encodeKey(key));
+  }
 
   @override
   Future<Set<String>> getKeys() => getDecodedKeys();
 
   @override
   Future<void> remove(String key) async {
+    validateKey(key);
     await backend.remove(encodeKey(key));
     notifyListeners(key);
   }
@@ -142,6 +150,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
 
   @override
   Future<void> removeAll(Iterable<String> keys) async {
+    validateKeys(keys);
     await backend.removeAll(keys.map(encodeKey));
     for (final key in keys) {
       notifyKeyListeners(key);
