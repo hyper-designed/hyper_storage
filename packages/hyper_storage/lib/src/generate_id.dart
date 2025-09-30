@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 /// Modeled after base64 web-safe chars, but ordered by ASCII.
-const String _kPushChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+const String _kPushChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 /// Implementation from https://gist.github.com/mikelehen/3596a30bd69384624c11
 ///

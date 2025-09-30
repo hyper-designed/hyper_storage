@@ -36,7 +36,14 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
 
   @protected
   @override
-  String getId(E value) => idGetter?.call(value) ?? generateId();
+  String getId(E value) {
+    if (idGetter case var idGetter?) {
+      final id = idGetter(value);
+      validateKey(id);
+      return id;
+    }
+    return generateId();
+  }
 
   @override
   Future<void> set(String key, E value) async {
@@ -160,7 +167,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
 
   @override
   Future<void> removeAllItems(Iterable<E> items) async {
-    final keys = items.map(getId);
+    final keys = items.map(getId).toList();
     await backend.removeAll(keys.map(encodeKey));
     for (final key in keys) {
       notifyKeyListeners(key);
@@ -173,7 +180,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
     final encodedKeys = await getEncodedKeys();
     await backend.removeAll(encodedKeys);
 
-    final decodedKeys = encodedKeys.map(decodeKey);
+    final decodedKeys = encodedKeys.map(decodeKey).toList();
     for (final key in decodedKeys) {
       notifyKeyListeners(key);
     }

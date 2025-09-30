@@ -26,19 +26,26 @@ class HyperStorage extends _StorageBase {
   }
 
   static Future<HyperStorage> init({required StorageBackend backend}) async {
+    if (_instance case var instance?) {
+      if (backend.runtimeType != instance.backend.runtimeType) {
+        throw StateError(
+          'HyperStorage already initialized with different backend type: ${instance.backend.runtimeType}. Call HyperStorage.close() before reinitializing with a different backend.',
+        );
+      }
+      return instance;
+    }
     await backend.init();
-    _instance = HyperStorage._(backend);
-    return _instance!;
+    return _instance = HyperStorage._(backend);
   }
 
   /// Uses in-memory backend which is easier to test.
   @visibleForTesting
   static Future<HyperStorage> initMocked({Map<String, dynamic>? initialData}) async {
-    // ignore: invalid_use_of_visible_for_testing_member
-    final backend = InMemoryBackend.mocked(initialData: initialData);
+    if (_instance case var instance?) return instance;
+
+    final backend = InMemoryBackend.withData(initialData: initialData);
     await backend.init();
-    final HyperStorage storage = HyperStorage._(backend);
-    return storage;
+    return _instance = HyperStorage._(backend);
   }
 
   static Future<StorageContainer> container(String name) async {
@@ -47,7 +54,7 @@ class HyperStorage extends _StorageBase {
     return instance._containers[name] = container;
   }
 
-  static Future<JsonStorageContainer<E>> jsonContainer<E>(
+  static Future<JsonStorageContainer<E>> jsonSerializableContainer<E>(
     String name, {
     required ToJson<E> toJson,
     required FromJson<E> fromJson,

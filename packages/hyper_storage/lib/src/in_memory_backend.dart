@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 import 'api/backend.dart';
 import 'hyper_storage_container.dart';
 
@@ -9,8 +7,7 @@ class InMemoryBackend extends StorageBackend {
   /// In memory storage backend for testing or temporary storage.
   InMemoryBackend() : _data = {};
 
-  @visibleForTesting
-  InMemoryBackend.mocked({Map<String, dynamic>? initialData}) : _data = {...?initialData};
+  InMemoryBackend.withData({Map<String, dynamic>? initialData}) : _data = {...?initialData};
 
   @override
   Future<InMemoryBackend> init() async => this;

@@ -28,7 +28,7 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
   @override
   Future<void> clear() async {
     final encodedKeys = await getEncodedKeys();
-    final decodedKeys = encodedKeys.map(decodeKey);
+    final decodedKeys = encodedKeys.map(decodeKey).toList();
     await backend.removeAll(encodedKeys);
     for (final key in decodedKeys) {
       notifyKeyListeners(key);
