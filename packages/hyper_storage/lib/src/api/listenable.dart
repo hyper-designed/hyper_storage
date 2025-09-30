@@ -39,7 +39,11 @@ mixin ListenableStorage {
   @mustCallSuper
   void notifyListeners([String? key]) {
     for (final listener in _listeners) {
-      listener();
+      try {
+        listener();
+      } catch (_) {
+        // Silently ignore listener exceptions to prevent breaking other listeners
+      }
     }
     if (key != null) notifyKeyListeners(key);
   }
@@ -48,7 +52,11 @@ mixin ListenableStorage {
     final listeners = _keyedListeners[key];
     if (listeners != null) {
       for (final listener in listeners) {
-        listener();
+        try {
+          listener();
+        } catch (_) {
+          // Silently ignore listener exceptions to prevent breaking other listeners
+        }
       }
     }
   }
