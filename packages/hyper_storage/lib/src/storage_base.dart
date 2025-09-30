@@ -1,6 +1,6 @@
 part of 'hyper_storage.dart';
 
-abstract class _StorageBase implements StorageOperationsApi {
+abstract class _StorageBase with ListenableStorage implements StorageOperationsApi {
   final StorageBackend backend;
 
   _StorageBase(this.backend);
@@ -51,46 +51,95 @@ abstract class _StorageBase implements StorageOperationsApi {
   Future<bool> get isNotEmpty => backend.isNotEmpty;
 
   @override
-  Future<void> remove(String key) => backend.remove(key);
+  Future<void> remove(String key) async {
+    await backend.remove(key);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> removeAll(Iterable<String> keys) => backend.removeAll(keys);
+  Future<void> removeAll(Iterable<String> keys) async {
+    await backend.removeAll(keys);
+    for (final key in keys) {
+      notifyKeyListeners(key);
+    }
+    notifyListeners();
+  }
 
   @override
-  Future<void> set<E>(String key, E value) => backend.set<E>(key, value);
+  Future<void> set<E>(String key, E value) async {
+    await backend.set<E>(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setAll(Map<String, dynamic> values) => backend.setAll(values);
+  Future<void> setAll(Map<String, dynamic> values) async {
+    await backend.setAll(values);
+    for (final key in values.keys) {
+      notifyKeyListeners(key);
+    }
+    notifyListeners();
+  }
 
   @override
-  Future<void> setBool(String key, bool value) => backend.setBool(key, value);
+  Future<void> setBool(String key, bool value) async {
+    await backend.setBool(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setDateTime(String key, DateTime value) => backend.setDateTime(key, value);
+  Future<void> setDateTime(String key, DateTime value) async {
+    await backend.setDateTime(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setDouble(String key, double value) => backend.setDouble(key, value);
+  Future<void> setDouble(String key, double value) async {
+    await backend.setDouble(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setDuration(String key, Duration value) => backend.setDuration(key, value);
+  Future<void> setDuration(String key, Duration value) async {
+    await backend.setDuration(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setInt(String key, int value) => backend.setInt(key, value);
+  Future<void> setInt(String key, int value) async {
+    await backend.setInt(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setJson(String key, Map<String, dynamic> value) => backend.setJson(key, value);
+  Future<void> setJson(String key, Map<String, dynamic> value) async {
+    await backend.setJson(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setJsonList(String key, List<Map<String, dynamic>> value) => backend.setJsonList(key, value);
+  Future<void> setJsonList(String key, List<Map<String, dynamic>> value) async {
+    await backend.setJsonList(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setString(String key, String value) => backend.setString(key, value);
+  Future<void> setString(String key, String value) async {
+    await backend.setString(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> setStringList(String key, List<String> value) => backend.setStringList(key, value);
+  Future<void> setStringList(String key, List<String> value) async {
+    await backend.setStringList(key, value);
+    notifyListeners(key);
+  }
 
   @override
-  Future<void> clear() => backend.clear();
+  Future<void> clear() async {
+    await backend.clear();
+    notifyListeners();
+    removeAllListeners();
+  }
 
   @override
   Future<void> close() => backend.close();

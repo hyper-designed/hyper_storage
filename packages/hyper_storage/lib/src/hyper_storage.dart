@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'api/api.dart';
 import 'api/backend.dart';
+import 'api/listenable.dart';
 import 'api/serializable_container.dart';
 import 'api/storage_container.dart';
 import 'in_memory_backend.dart';
@@ -96,6 +97,7 @@ class HyperStorage extends _StorageBase {
     _containers.clear();
     _objectContainers.clear();
 
+    removeAllListeners();
     _instance = null;
     await backend.close();
   }
