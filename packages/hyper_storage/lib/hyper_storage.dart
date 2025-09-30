@@ -1,6 +1,7 @@
 library;
 
 export 'src/api/backend.dart';
+export 'src/api/listenable.dart';
 export 'src/api/serializable_container.dart';
 export 'src/hyper_storage.dart';
 export 'src/hyper_storage_container.dart';

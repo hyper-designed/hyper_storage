@@ -2,24 +2,25 @@ import 'package:meta/meta.dart';
 
 typedef ListenableCallback = void Function();
 
+@protected
 mixin ListenableStorage {
-  final Map<int, ListenableCallback> _listeners = <int, ListenableCallback>{};
-  final Map<String, List<ListenableCallback>> _keyedListeners = <String, List<ListenableCallback>>{};
+  final Set<ListenableCallback> _listeners = <ListenableCallback>{};
+  final Map<String, Set<ListenableCallback>> _keyedListeners = <String, Set<ListenableCallback>>{};
 
-  void addListener(ListenableCallback listener) {
-    _listeners[listener.hashCode] = listener;
-  }
+  bool get hasListeners => _listeners.isNotEmpty || _keyedListeners.values.any((listeners) => listeners.isNotEmpty);
 
-  void removeListener(ListenableCallback listener) {
-    _listeners.remove(listener.hashCode);
-  }
+  void addListener(ListenableCallback listener) => _listeners.add(listener);
 
-  void addKeyListener(String key, ListenableCallback listener) {
-    _keyedListeners.putIfAbsent(key, () => <ListenableCallback>[]).add(listener);
-  }
+  void removeListener(ListenableCallback listener) => _listeners.remove(listener);
+
+  void addKeyListener(String key, ListenableCallback listener) =>
+      _keyedListeners.putIfAbsent(key, () => <ListenableCallback>{}).add(listener);
 
   void removeKeyListener(String key, ListenableCallback listener) {
     _keyedListeners[key]?.remove(listener);
+    if (_keyedListeners[key]?.isEmpty == true) {
+      _keyedListeners.remove(key);
+    }
   }
 
   void removeAllListeners() {
@@ -30,15 +31,18 @@ mixin ListenableStorage {
   @protected
   @mustCallSuper
   void notifyListeners([String? key]) {
-    for (final listener in _listeners.values) {
+    for (final listener in _listeners) {
       listener();
     }
     if (key != null) notifyKeyListeners(key);
   }
 
   void notifyKeyListeners(String key) {
-    for (final listener in _keyedListeners[key] ?? []) {
-      listener();
+    final listeners = _keyedListeners[key];
+    if (listeners != null) {
+      for (final listener in listeners) {
+        listener();
+      }
     }
   }
 }
