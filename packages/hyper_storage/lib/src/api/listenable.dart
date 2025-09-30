@@ -7,7 +7,14 @@ mixin ListenableStorage {
   final Set<ListenableCallback> _listeners = <ListenableCallback>{};
   final Map<String, Set<ListenableCallback>> _keyedListeners = <String, Set<ListenableCallback>>{};
 
-  bool get hasListeners => _listeners.isNotEmpty || _keyedListeners.values.any((listeners) => listeners.isNotEmpty);
+  bool get hasListeners {
+    if (_listeners.isNotEmpty) return true;
+
+    for (final key in _keyedListeners.keys) {
+      if (_keyedListeners[key]!.isNotEmpty) return true;
+    }
+    return false;
+  }
 
   void addListener(ListenableCallback listener) => _listeners.add(listener);
 
