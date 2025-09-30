@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart' show protected;
 
-import '../../hyper_storage.dart';
-import '../backend/api.dart';
-import '../backend/listenable.dart';
-import 'storage_container_base.dart';
+import 'api/backend.dart';
+import 'api/storage_container.dart';
+import 'item_holder.dart';
+import 'json_storage_container.dart';
 
-class HyperStorageContainer extends StorageContainerBase with ListenableStorage implements DataAPI {
+class HyperStorageContainer extends StorageContainer with GenericStorageOperationsMixin {
   @protected
   HyperStorageContainer({
     required super.backend,
@@ -93,33 +93,39 @@ class HyperStorageContainer extends StorageContainerBase with ListenableStorage 
     notifyListeners();
   }
 
+  @override
   Future<void> setStringList(String key, List<String> value) async {
     await backend.setString(encodeKey(key), jsonEncode(value));
     notifyListeners(key);
   }
 
+  @override
   Future<List<String>?> getStringList(String key) async {
     final String? dataString = await backend.getString(encodeKey(key));
     if (dataString == null) return null;
     return List<String>.from(jsonDecode(dataString) as List<dynamic>);
   }
 
+  @override
   Future<void> setJson(String key, Map<String, dynamic> value) async {
     await backend.setString(encodeKey(key), jsonEncode(value));
     notifyListeners(key);
   }
 
+  @override
   Future<Map<String, dynamic>?> getJson(String key) async {
     final jsonString = await backend.getString(encodeKey(key));
     if (jsonString == null) return null;
     return jsonDecode(jsonString) as Map<String, dynamic>;
   }
 
+  @override
   Future<void> setJsonList(String key, List<Map<String, dynamic>> value) async {
     await backend.setString(encodeKey(key), jsonEncode(value));
     notifyListeners(key);
   }
 
+  @override
   Future<List<Map<String, dynamic>>?> getJsonList(String key) async {
     final jsonString = await backend.getString(encodeKey(key));
     if (jsonString == null) return null;
@@ -127,38 +133,7 @@ class HyperStorageContainer extends StorageContainerBase with ListenableStorage 
     return jsonList.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
-  Future<E?> get<E>(String key) async {
-    return switch (E) {
-      const (String) => await getString(key) as E?,
-      const (int) => await getInt(key) as E?,
-      const (double) => await getDouble(key) as E?,
-      const (num) => await getDouble(key) as E?,
-      const (bool) => await getBool(key) as E?,
-      const (List<String>) => await getStringList(key) as E?,
-      const (Map<String, dynamic>) => await getJson(key) as E?,
-      const (List<Map<String, dynamic>>) => await getJsonList(key) as E?,
-      const (DateTime) => await getDateTime(key) as E?,
-      const (Duration) => await getDuration(key) as E?,
-      _ => throw UnsupportedError('Unsupported type: $E'),
-    };
-  }
-
-  Future<void> set<E>(String key, E value) async {
-    await switch (value) {
-      String value => setString(key, value),
-      int value => setInt(key, value),
-      double value => setDouble(key, value),
-      bool value => setBool(key, value),
-      List<String> value => setStringList(key, value),
-      Map<String, dynamic> value => setJson(key, value),
-      List<Map<String, dynamic>> value => setJsonList(key, value),
-      DateTime value => setDateTime(key, value),
-      Duration value => setDuration(key, value),
-      _ => throw UnsupportedError('Unsupported type: $E'),
-    };
-    notifyKeyListeners(key);
-  }
-
+  @override
   Future<DateTime?> getDateTime(String key, {bool isUtc = false}) async {
     final int? millis = await backend.getInt(encodeKey(key));
     if (millis == null) return null;
@@ -166,6 +141,7 @@ class HyperStorageContainer extends StorageContainerBase with ListenableStorage 
     return isUtc ? dateTime : dateTime.toLocal();
   }
 
+  @override
   Future<void> setDateTime(String key, DateTime value) async {
     await backend.setInt(
       encodeKey(key),
@@ -174,12 +150,14 @@ class HyperStorageContainer extends StorageContainerBase with ListenableStorage 
     notifyListeners(key);
   }
 
+  @override
   Future<Duration> getDuration(String key) async {
     final int? millis = await backend.getInt(encodeKey(key));
     if (millis == null) return Duration.zero;
     return Duration(milliseconds: millis);
   }
 
+  @override
   Future<void> setDuration(String key, Duration value) async {
     await backend.setInt(encodeKey(key), value.inMilliseconds);
     notifyListeners(key);
@@ -194,12 +172,18 @@ class HyperStorageContainer extends StorageContainerBase with ListenableStorage 
     notifyListeners();
   }
 
+  @override
+  Future<void> close() async {
+    removeAllListeners();
+    await backend.close();
+  }
+
   /// Allows to easily store and retrieve serializable objects in the storage for given key.
-  Future<LocalStorageItemHolder<T>> keyHolder<T>(
+  Future<HyperStorageItemHolder<T>> keyHolder<T>(
     String key, {
     required FromJson<T> fromJson,
     required ToJson<T> toJson,
-  }) async => LocalStorageItemHolder<T>._(
+  }) async => HyperStorageItemHolder<T>(
     backend,
     encodeKey(key),
     key: key,
@@ -207,48 +191,4 @@ class HyperStorageContainer extends StorageContainerBase with ListenableStorage 
     toJson: toJson,
     onChanged: () => notifyListeners(key),
   );
-
-  @override
-  Future<void> close() async {
-    removeAllListeners();
-    await backend.close();
-  }
-}
-
-class LocalStorageItemHolder<T> {
-  final String _encodedKey;
-  final String key;
-  final FromJson<T> fromJson;
-  final ToJson<T> toJson;
-  final StorageBackend _backend;
-  final void Function() onChanged;
-
-  LocalStorageItemHolder._(
-    this._backend,
-    this._encodedKey, {
-    required this.key,
-    required this.fromJson,
-    required this.toJson,
-    required this.onChanged,
-  });
-
-  Future<bool> get exists => _backend.containsKey(_encodedKey);
-
-  Future<T?> get() async {
-    final String? jsonString = await _backend.getString(_encodedKey);
-    if (jsonString == null) return null;
-    final Map<String, dynamic> json = jsonDecode(jsonString) as Map<String, dynamic>;
-    return fromJson(json);
-  }
-
-  Future<void> set(T value) async {
-    final String jsonString = jsonEncode(toJson(value));
-    await _backend.setString(_encodedKey, jsonString);
-    onChanged();
-  }
-
-  Future<void> remove() async {
-    await _backend.remove(_encodedKey);
-    onChanged();
-  }
 }

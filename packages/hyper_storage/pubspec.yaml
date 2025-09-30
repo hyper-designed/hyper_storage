@@ -1,14 +1,15 @@
 name: hyper_storage
 description: A starting point for Dart libraries or applications.
 version: 0.1.0
-# repository: https://github.com/my_org/my_repo
+
+repository: https://github.com/hyper-designed/hyper_storage
 
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.9.0
 
 # Add regular dependencies here.
 dependencies:
-  meta: ^1.16.0
+  meta: ">=1.16.0 <2.0.0"
 
 dev_dependencies:
   lints: ^6.0.0

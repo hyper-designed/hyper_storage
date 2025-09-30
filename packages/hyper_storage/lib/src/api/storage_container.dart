@@ -1,10 +1,10 @@
 import 'package:meta/meta.dart';
 
-import '../backend/api.dart';
-import '../backend/backend.dart';
+import 'backend.dart';
+import 'listenable.dart';
 
 @protected
-abstract class StorageContainerBase implements DataAPIBase {
+abstract class StorageContainer with ListenableStorage {
   /// The name of the storage backend, used for namespacing keys.
   final String name;
   final String delimiter;
@@ -12,17 +12,18 @@ abstract class StorageContainerBase implements DataAPIBase {
   @protected
   final StorageBackend backend;
 
-  StorageContainerBase({
+  StorageContainer({
     required this.backend,
     required this.name,
-    this.delimiter = '.',
-  });
+    String? delimiter,
+  }) : delimiter = delimiter ?? '.';
 
   @protected
-  String encodeKey(String key) => name.isEmpty ? key : '$name.$key';
+  String encodeKey(String key) => name.isEmpty ? key : '$name$delimiter$key';
 
   @protected
-  String decodeKey(String key) => key.startsWith('$name.') ? key.substring(name.length + 1) : key;
+  String decodeKey(String key) =>
+      key.startsWith('$name$delimiter') ? key.substring(name.length + delimiter.length) : key;
 
   /// Whether the given [rawKey] is associated with this container or not.
   @protected
@@ -42,4 +43,6 @@ abstract class StorageContainerBase implements DataAPIBase {
     final allKeys = await backend.getKeys();
     return allKeys.where(isAssociatedKey).map(decodeKey).toSet();
   }
+
+  Future<void> close();
 }

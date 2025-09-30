@@ -1,6 +1,9 @@
 library;
 
-// export 'src/backend/api.dart';
-export 'src/backend/backend.dart';
-export 'src/container/serializable_container.dart';
-export 'src/container/storage_container.dart';
+export 'src/api/backend.dart';
+export 'src/api/serializable_container.dart';
+export 'src/hyper_storage.dart';
+export 'src/hyper_storage_container.dart';
+export 'src/in_memory_backend.dart';
+export 'src/item_holder.dart';
+export 'src/json_storage_container.dart';

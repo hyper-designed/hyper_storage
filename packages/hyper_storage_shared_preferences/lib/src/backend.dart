@@ -12,21 +12,10 @@ class SharedPreferencesBackend extends StorageBackend {
   }
 
   @override
-  Future<SharedPreferencesBackend> init() async {
-    _prefs ??= SharedPreferencesAsync();
-    return this;
-  }
+  Future<void> init() async => _prefs ??= SharedPreferencesAsync();
 
   @override
-  Future<HyperStorageContainer> container(String name) async {
-    final backend = SharedPreferencesBackend();
-    await backend.init();
-    return HyperStorageContainer(backend: backend, name: name);
-  }
-
-  @override
-  Future<void> setString(String key, String value) =>
-      prefs.setString(key, value);
+  Future<void> setString(String key, String value) => prefs.setString(key, value);
 
   @override
   Future<String?> getString(String key) => prefs.getString(key);
@@ -38,8 +27,7 @@ class SharedPreferencesBackend extends StorageBackend {
   Future<bool?> getBool(String key) => prefs.getBool(key);
 
   @override
-  Future<void> setDouble(String key, double value) =>
-      prefs.setDouble(key, value);
+  Future<void> setDouble(String key, double value) => prefs.setDouble(key, value);
 
   @override
   Future<double?> getDouble(String key) => prefs.getDouble(key);
@@ -50,30 +38,8 @@ class SharedPreferencesBackend extends StorageBackend {
   @override
   Future<int?> getInt(String key) => prefs.getInt(key);
 
-  Future<void> setStringList(String key, List<String> value) =>
-      prefs.setStringList(key, value);
-
-  Future<List<String>?> getStringList(String key) => prefs.getStringList(key);
-
-  @override
-  Future<void> setAll(Map<String, dynamic> values) async {
-    for (final MapEntry(:key, :value) in values.entries) {
-      await switch (value) {
-        String value => prefs.setString(key, value),
-        int value => prefs.setInt(key, value),
-        double value => prefs.setDouble(key, value),
-        bool value => prefs.setBool(key, value),
-        List<String> value => prefs.setStringList(key, value),
-        _ => throw ArgumentError(
-          'Unsupported value type: ${value.runtimeType}',
-        ),
-      };
-    }
-  }
-
   @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
-    // decoded keys associated with this container.
     final allKeys = await getKeys();
     if (allowList == null || allowList.isEmpty) allowList = allKeys;
     final data = await prefs.getAll(allowList: allowList.toSet());
@@ -94,10 +60,10 @@ class SharedPreferencesBackend extends StorageBackend {
   }
 
   @override
-  Future<void> clear() => prefs.clear();
+  Future<bool> containsKey(String key) => prefs.containsKey(key);
 
   @override
-  Future<bool> containsKey(String key) => prefs.containsKey(key);
+  Future<void> clear() => prefs.clear();
 
   @override
   Future<void> close() async {

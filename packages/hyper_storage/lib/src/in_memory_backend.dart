@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
-import '../../hyper_storage.dart';
+import 'api/backend.dart';
+import 'hyper_storage_container.dart';
 
 class InMemoryBackend extends StorageBackend {
   final Map<String, dynamic> _data;
@@ -79,4 +80,40 @@ class InMemoryBackend extends StorageBackend {
     }
     return Future.value();
   }
+
+  @override
+  Future<DateTime?> getDateTime(String key, {bool isUtc = false}) => _data[key];
+
+  @override
+  Future<Duration?> getDuration(String key) => _data[key];
+
+  @override
+  Future<Map<String, dynamic>?> getJson(String key) => _data[key];
+
+  @override
+  Future<List<Map<String, dynamic>>?> getJsonList(String key) => _data[key];
+
+  @override
+  Future<List<String>?> getStringList(String key) => _data[key];
+
+  @override
+  Future<bool> get isEmpty => Future.value(_data.isEmpty);
+
+  @override
+  Future<bool> get isNotEmpty => Future.value(_data.isNotEmpty);
+
+  @override
+  Future<void> setDateTime(String key, DateTime value) async => _data[key] = value;
+
+  @override
+  Future<void> setDuration(String key, Duration value) async => _data[key] = value;
+
+  @override
+  Future<void> setJson(String key, Map<String, dynamic> value) async => _data[key] = value;
+
+  @override
+  Future<void> setJsonList(String key, List<Map<String, dynamic>> value) async => _data[key] = value;
+
+  @override
+  Future<void> setStringList(String key, List<String> value) async => _data[key] = value;
 }

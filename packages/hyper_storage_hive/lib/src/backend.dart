@@ -7,8 +7,7 @@ class HiveBackend extends StorageBackend {
   Box? _box;
 
   Box get box {
-    return _box ??
-        (throw StateError('HiveBackend not initialized. Call init() first.'));
+    return _box ?? (throw StateError('HiveBackend not initialized. Call init() first.'));
   }
 
   /// Hive backend for local storage, using Hive as the underlying storage mechanism.
@@ -53,9 +52,6 @@ class HiveBackend extends StorageBackend {
   Future<int?> getInt(String key) => box.get(key);
 
   @override
-  Future<void> setAll(Map<String, dynamic> values) => box.putAll(values);
-
-  @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
     final data = <String, dynamic>{...box.toMap()};
     if (allowList != null && allowList.isNotEmpty) {
@@ -65,21 +61,19 @@ class HiveBackend extends StorageBackend {
   }
 
   @override
-  Future<Set<String>> getKeys() async =>
-      box.keys.map((key) => key.toString()).toSet();
+  Future<Set<String>> getKeys() async => box.keys.map((key) => key.toString()).toSet();
 
   @override
   Future<void> remove(String key) => box.delete(key);
 
   @override
-  Future<void> removeAll(Iterable<String> keys) async =>
-      await box.deleteAll(keys);
-
-  @override
-  Future<void> clear() => box.clear();
+  Future<void> removeAll(Iterable<String> keys) async => await box.deleteAll(keys);
 
   @override
   Future<bool> containsKey(String key) async => box.containsKey(key);
+
+  @override
+  Future<void> clear() => box.clear();
 
   @override
   Future<void> close() async {
