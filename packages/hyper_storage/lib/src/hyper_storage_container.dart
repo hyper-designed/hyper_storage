@@ -151,9 +151,9 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
   }
 
   @override
-  Future<Duration> getDuration(String key) async {
+  Future<Duration?> getDuration(String key) async {
     final int? millis = await backend.getInt(encodeKey(key));
-    if (millis == null) return Duration.zero;
+    if (millis == null) return null;
     return Duration(milliseconds: millis);
   }
 
