@@ -16,10 +16,29 @@ abstract class StorageContainer with ListenableStorage {
     required this.backend,
     required this.name,
     String? delimiter,
-  }) : delimiter = delimiter ?? '.';
+  }) : delimiter = delimiter ?? '.' {
+    if (name.contains(this.delimiter)) {
+      throw ArgumentError('Container name cannot contain delimiter "${this.delimiter}": $name');
+    }
+  }
 
   @protected
-  String encodeKey(String key) => name.isEmpty ? key : '$name$delimiter$key';
+  String encodeKey(String key) {
+    _validateKey(key);
+    return name.isEmpty ? key : '$name$delimiter$key';
+  }
+
+  void _validateKey(String key) {
+    if (key.isEmpty) {
+      throw ArgumentError('Key cannot be empty');
+    }
+    if (key.length > 255) {
+      throw ArgumentError('Key too long (max 255 characters): ${key.length}');
+    }
+    if (key.contains(delimiter)) {
+      throw ArgumentError('Key cannot contain delimiter "$delimiter": $key');
+    }
+  }
 
   @protected
   String decodeKey(String key) =>
