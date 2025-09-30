@@ -30,7 +30,7 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
   }
 
   @override
-  Future<void> setStringList(String key, List<String> value) => setString(jsonEncode(value));
+  Future<void> setStringList(String key, List<String> value) => setString(key, jsonEncode(value));
 
   @override
   Future<List<String>?> getStringList(String key) async {
