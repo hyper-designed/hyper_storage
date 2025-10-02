@@ -1,15 +1,119 @@
 part of 'hyper_storage.dart';
 
-abstract class _StorageBase with ListenableStorage implements StorageOperationsApi {
+/// An internal base class that implements storage operations with validation and listener support.
+///
+/// [_StorageBase] provides the foundational implementation of
+/// [StorageOperationsApi] with automatic key validation and change notifications.
+/// This class serves as the base for [HyperStorage], delegating actual storage
+/// operations to a [StorageBackend] while handling cross-cutting concerns like
+/// validation and event notifications.
+///
+/// ## Purpose
+///
+/// This class exists to:
+/// - **Centralize Validation**: Ensure all keys are valid before operations
+/// - **Delegate to Backend**: Forward validated operations to the backend
+/// - **Manage Notifications**: Notify listeners of all data changes
+/// - **Reduce Boilerplate**: Provide reusable implementation for storage operations
+///
+/// ## Implementation Details
+///
+/// The class uses a decorator pattern, wrapping a [StorageBackend] and adding
+/// validation and notification behavior to each operation. All methods follow
+/// this pattern:
+///
+/// 1. Validate input (keys, values)
+/// 2. Delegate to backend
+/// 3. Notify listeners (if data changed)
+///
+/// ## Key Validation Rules
+///
+/// Keys are validated using [_validateKey] and [_validateKeys]:
+/// - Keys cannot be empty strings
+/// - Keys cannot consist only of whitespace
+/// - Validation occurs before any backend operation
+///
+/// ## Change Notifications
+///
+/// The class uses [ListenableStorage] mixin to provide:
+/// - Global listeners (notified on any change)
+/// - Key-specific listeners (notified when specific keys change)
+///
+/// Listeners are notified after successful backend operations.
+///
+/// ## Internal Use
+///
+/// This class is marked [@internal] and should not be used directly outside
+/// the hyper_storage package. It is extended by [HyperStorage] to provide
+/// the public API.
+///
+/// See also:
+/// - [HyperStorage] which extends this class
+/// - [StorageOperationsApi] for the interface definition
+/// - [ListenableStorage] for the listener functionality
+/// - [StorageBackend] for the backend interface
+abstract class _StorageBase
+    with ItemHolderMixin, ListenableStorage, GenericStorageOperationsMixin
+    implements StorageOperationsApi {
+  /// The storage backend that handles actual data persistence.
+  ///
+  /// All storage operations are delegated to this backend after validation.
+  /// The backend determines where and how data is actually stored (e.g., Hive,
+  /// SharedPreferences, in-memory, etc.).
   final StorageBackend backend;
 
+  /// Creates a new [_StorageBase] with the specified backend.
+  ///
+  /// Parameters:
+  ///   * [backend] - The storage backend to delegate operations to. This
+  ///     backend should already be initialized before creating this instance.
   _StorageBase(this.backend);
 
+  /// Validates that a single key is acceptable for storage operations.
+  ///
+  /// This method checks that the key meets basic requirements for storage:
+  /// - Must not be empty
+  /// - Must not consist only of whitespace characters
+  ///
+  /// Parameters:
+  ///   * [key] - The key to validate.
+  ///
+  /// Throws:
+  ///   * [ArgumentError] if the key is empty.
+  ///   * [ArgumentError] if the key contains only whitespace.
+  ///
+  /// Example:
+  /// ```dart
+  /// _validateKey('validKey');      // OK
+  /// _validateKey('');              // Throws ArgumentError: Key cannot be empty
+  /// _validateKey('   ');           // Throws ArgumentError: Key cannot be only whitespace
+  /// _validateKey(' key ');         // OK - has non-whitespace content
+  /// ```
   void _validateKey(String key) {
     if (key.isEmpty) throw ArgumentError('Key cannot be empty');
     if (key.trim().isEmpty) throw ArgumentError('Key cannot be only whitespace');
   }
 
+  /// Validates that all keys in a collection are acceptable for storage operations.
+  ///
+  /// This method validates multiple keys using [_validateKey]. If the iterable
+  /// is null or empty, no validation is performed (this is not an error). If
+  /// any key in the iterable fails validation, an [ArgumentError] is thrown.
+  ///
+  /// Parameters:
+  ///   * [keys] - Optional iterable of keys to validate. Can be null or empty.
+  ///
+  /// Throws:
+  ///   * [ArgumentError] if any key is empty or consists only of whitespace.
+  ///
+  /// Example:
+  /// ```dart
+  /// _validateKeys(['key1', 'key2']);       // OK
+  /// _validateKeys(null);                   // OK - no validation needed
+  /// _validateKeys([]);                     // OK - no validation needed
+  /// _validateKeys(['valid', '']);          // Throws ArgumentError
+  /// _validateKeys(['valid', '   ']);       // Throws ArgumentError
+  /// ```
   void _validateKeys(Iterable<String>? keys) {
     if (keys == null || keys.isEmpty) return;
     for (final key in keys) {
@@ -21,12 +125,6 @@ abstract class _StorageBase with ListenableStorage implements StorageOperationsA
   Future<bool> containsKey(String key) {
     _validateKey(key);
     return backend.containsKey(key);
-  }
-
-  @override
-  Future<E?> get<E>(String key) {
-    _validateKey(key);
-    return backend.get<E>(key);
   }
 
   @override
@@ -113,13 +211,6 @@ abstract class _StorageBase with ListenableStorage implements StorageOperationsA
       notifyKeyListeners(key);
     }
     notifyListeners();
-  }
-
-  @override
-  Future<void> set<E>(String key, E value) async {
-    _validateKey(key);
-    await backend.set<E>(key, value);
-    notifyListeners(key);
   }
 
   @override

@@ -1,12 +1,36 @@
 import 'api/backend.dart';
 import 'hyper_storage_container.dart';
 
+/// A volatile storage backend that stores all data in memory.
+///
+/// [InMemoryBackend] implements the [StorageBackend] interface using a simple
+/// [Map] for data storage. All operations are synchronous in nature but wrapped
+/// in [Future]s to match the backend interface contract.
 class InMemoryBackend extends StorageBackend {
+  /// The internal map that stores all data.
+  ///
+  /// Keys are strings (storage keys), and values can be any type supported
+  /// by the storage operations (String, int, bool, double, DateTime, Duration,
+  /// Map, List).
   final Map<String, dynamic> _data;
 
-  /// In memory storage backend for testing or temporary storage.
+  /// Creates a new empty [InMemoryBackend].
+  ///
+  /// The backend starts with no data and is ready to use immediately without
+  /// requiring initialization (though calling [init] is still supported for
+  /// interface compatibility).
   InMemoryBackend() : _data = {};
 
+  /// Creates a new [InMemoryBackend] pre-populated with initial data.
+  ///
+  /// This constructor is particularly useful for testing scenarios where you
+  /// want to start with a known data state. The [initialData] map is copied,
+  /// so modifications to the backend won't affect the original map.
+  ///
+  /// Parameters:
+  ///   * [initialData] - Optional map of initial key-value pairs. The map is
+  ///     shallow-copied into the backend. Keys should be strings, and values
+  ///     should be types supported by the storage operations.
   InMemoryBackend.withData({Map<String, dynamic>? initialData}) : _data = {...?initialData};
 
   @override

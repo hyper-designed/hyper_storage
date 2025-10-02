@@ -3,9 +3,22 @@ import 'package:hyper_storage/hyper_storage.dart';
 
 import 'utils.dart';
 
+/// A secure storage backend implementation that leverages platform-specific
+/// secure storage mechanisms to protect sensitive data.
 class SecureStorageBackend extends StorageBackend {
+  /// The underlying [FlutterSecureStorage] instance that handles platform-specific
+  /// secure storage operations.
+  ///
+  /// This instance is configured with platform-specific options for optimal
+  /// security on each supported platform.
   final FlutterSecureStorage storage;
 
+  /// Creates a new [SecureStorageBackend] with optional custom storage configuration.
+  ///
+  /// Parameters:
+  ///   * [storage] - Optional custom [FlutterSecureStorage] instance. If not
+  ///     provided, a default instance will be created with security-optimized
+  ///     settings for each platform.
   SecureStorageBackend({FlutterSecureStorage? storage})
     : storage =
           storage ??
@@ -55,6 +68,23 @@ class SecureStorageBackend extends StorageBackend {
     return data;
   }
 
+  /// Parses a string value to its most appropriate type.
+  ///
+  /// Attempts to parse the value as boolean, integer, double, JSON, or
+  /// returns the original string if none of these apply.
+  ///
+  /// Parameters:
+  ///   * [value] - The string value to parse.
+  ///
+  /// Returns the parsed value in priority order:
+  /// 1. [bool] if the value is "true" or "false" (case-insensitive)
+  /// 2. [int] if the value is a valid integer
+  /// 3. [double] if the value is a valid decimal number
+  /// 4. [Map] or [List] if the value is valid JSON
+  /// 5. [String] as fallback for all other cases
+  ///
+  /// This is an internal utility method used by [getAll] for automatic type
+  /// inference.
   Object? _parseValue(String value) =>
       bool.tryParse(value) ?? int.tryParse(value) ?? double.tryParse(value) ?? tryJsonDecode(value) ?? value;
 
@@ -78,6 +108,9 @@ class SecureStorageBackend extends StorageBackend {
 
   @override
   Future<void> clear() => storage.deleteAll();
+
+  @override
+  Future<void> destroy() => storage.deleteAll();
 
   @override
   Future<void> close() async {

@@ -1,9 +1,12 @@
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// A storage backend implementation that uses [SharedPreferences] for persistent
+/// key-value data storage across app sessions.
 class SharedPreferencesBackend extends StorageBackend {
   SharedPreferencesAsync? _prefs;
 
+  /// Gets the underlying [SharedPreferences] instance.
   SharedPreferencesAsync get prefs {
     return _prefs ??
         (throw StateError(
@@ -11,8 +14,13 @@ class SharedPreferencesBackend extends StorageBackend {
         ));
   }
 
-  @override
-  Future<void> init() async => _prefs ??= SharedPreferencesAsync();
+  /// Creates a new [SharedPreferencesBackend].
+  ///
+  /// Optionally accepts an existing [SharedPreferencesAsync] instance for
+  /// dependency injection or custom configuration.
+  ///
+  /// If none is provided, a new instance will be created during [init].
+  SharedPreferencesBackend([SharedPreferencesAsync? prefs]) : _prefs = prefs ?? SharedPreferencesAsync();
 
   @override
   Future<void> setString(String key, String value) => prefs.setString(key, value);

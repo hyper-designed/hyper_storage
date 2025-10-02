@@ -1,13 +1,48 @@
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
+
 import '../hyper_storage_container.dart';
 import '../utils.dart';
 import 'api.dart';
 
-/// Base class for local storage implementations.
+/// An abstract class that defines the contract for a storage backend.
+///
+/// This class provides a base implementation for creating custom storage solutions
+/// that can persist data to various storage mechanisms (files, databases, etc.).
+/// It includes default implementations for common operations like handling JSON,
+/// lists, and date/time objects, reducing the boilerplate needed when implementing
+/// a new backend.
 abstract class StorageBackend with GenericStorageOperationsMixin implements StorageOperationsApi {
+  /// Initializes the storage backend.
+  ///
+  /// This method will be called before any other operations are performed on
+  /// the storage backend. It provides an opportunity to set up necessary resources,
+  /// open database connections, create files, or perform any other initialization
+  /// logic required by the backend.
+  ///
+  /// The default implementation is a no-op, but subclasses can override this to
+  /// perform custom initialization.
+  ///
+  /// Returns a [Future] that completes when initialization is finished.
   Future<void> init() async {}
 
+  /// Creates a new [HyperStorageContainer] with the given [name].
+  ///
+  /// A container provides a sandboxed, namespaced environment for storing
+  /// key-value pairs. Each container has its own isolated key space, allowing
+  /// you to organize data into logical groups without key collisions.
+  ///
+  /// Parameters:
+  /// * [name] - The unique name for the container. This is used to namespace
+  ///   all keys within the container.
+  ///
+  /// Returns a [Future] that completes with a new [HyperStorageContainer]
+  /// instance configured to use this backend.
+  ///
+  /// Throws:
+  /// * [ArgumentError] if the name is empty, contains only whitespace, or
+  ///   contains invalid characters.
   Future<HyperStorageContainer> container(String name) async => HyperStorageContainer(backend: this, name: name);
 
   @override
@@ -89,6 +124,25 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
   Future<void> setDuration(String key, Duration value) => setInt(key, value.inMilliseconds);
 }
 
+/// A mixin that provides generic implementations for storage operations.
+///
+/// This mixin implements the generic `get<E>` and `set<E>` methods that dispatch
+/// to the appropriate type-specific methods based on the runtime type.
+///
+/// This mixin reduces the amount of boilerplate code required when implementing
+/// a storage backend by providing type-aware routing logic.
+///
+/// Supported types:
+/// * [String] - Routes to [getString] / [setString]
+/// * [int] - Routes to [getInt] / [setInt]
+/// * [double] - Routes to [getDouble] / [setDouble]
+/// * [bool] - Routes to [getBool] / [setBool]
+/// * [DateTime] - Routes to [getDateTime] / [setDateTime]
+/// * [Duration] - Routes to [getDuration] / [setDuration]
+/// * [List<String>] - Routes to [getStringList] / [setStringList]
+/// * [Map<String, dynamic>] - Routes to [getJson] / [setJson]
+/// * [List<Map<String, dynamic>>] - Routes to [getJsonList] / [setJsonList]
+@internal
 mixin GenericStorageOperationsMixin implements StorageOperationsApi {
   @override
   Future<bool> get isEmpty async {
@@ -103,7 +157,7 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
   }
 
   @override
-  Future<E?> get<E>(String key) async {
+  Future<E?> get<E extends Object>(String key) async {
     return switch (E) {
       const (String) => getString(key) as E?,
       const (int) => getInt(key) as E?,
@@ -119,7 +173,7 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
   }
 
   @override
-  Future<void> set<E>(String key, E value) async {
+  Future<void> set<E extends Object>(String key, E value) async {
     await switch (value) {
       String value => setString(key, value),
       int value => setInt(key, value),

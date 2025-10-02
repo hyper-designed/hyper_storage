@@ -1,11 +1,8 @@
 import 'package:hive_ce/hive.dart';
 import 'package:hyper_storage/hyper_storage.dart';
 
-/// A [StorageBackend] implementation using Hive for persistent key-value storage.
-///
-/// See also:
-///   [LazyHiveBackend]: A variant that uses Hive's lazy boxes for on-demand loading.
-class HiveBackend extends StorageBackend {
+/// A [StorageBackend] implementation using Hive's lazy boxes.
+class LazyHiveBackend extends StorageBackend {
   /// The name of the Hive box used by this backend.
   ///
   /// This name determines which Hive box file will be used for storage.
@@ -13,12 +10,13 @@ class HiveBackend extends StorageBackend {
   /// name creates a separate, isolated storage space on disk.
   final String name;
 
-  Box? _box;
+  /// The underlying Hive box instance, or null if not yet initialized.
+  LazyBox? _box;
 
   /// The active Hive [Box] instance used for storage operations.
-  Box get box => _box ?? (throw StateError('HiveBackend not initialized. Call init() first.'));
+  LazyBox get box => _box ?? (throw StateError('HiveBackend not initialized. Call init() first.'));
 
-  /// Creates a new [HiveBackend] instance with optional named box support.
+  /// Creates a new [LazyHiveBackend] instance with optional named box support.
   ///
   /// The backend can operate on either the default Hive box or a
   /// specifically named box for isolated storage. Named boxes are useful
@@ -32,18 +30,21 @@ class HiveBackend extends StorageBackend {
   ///
   /// Note: The backend is not usable until [init] is called. Creating the
   /// instance only stores the configuration; the box is opened lazily.
-  HiveBackend({String? boxName}) : name = boxName ?? 'default' {
+  LazyHiveBackend({String? boxName}) : name = boxName ?? 'default' {
     if (boxName?.toLowerCase() == 'default') {
       throw ArgumentError('boxName cannot be "default". Use null or omit to use the default box.');
     }
   }
 
   @override
-  Future<void> init() async => _box ??= await Hive.openBox(name);
+  Future<void> init() async => _box ??= await Hive.openLazyBox(name);
 
+  /// Creates a new [HyperStorageContainer] with the specified [name].
+  ///
+  /// This method creates a new box with the given [name] and initializes it.
   @override
   Future<HyperStorageContainer> container(String name) async {
-    final backend = HiveBackend(boxName: name);
+    final backend = LazyHiveBackend(boxName: name);
     await backend.init();
     return HyperStorageContainer(backend: backend, name: name);
   }
@@ -52,19 +53,19 @@ class HiveBackend extends StorageBackend {
   Future<void> setString(String key, String value) => box.put(key, value);
 
   @override
-  Future<String?> getString(String key) => box.get(key);
+  Future<String?> getString(String key) async => await box.get(key);
 
   @override
   Future<void> setBool(String key, bool value) => box.put(key, value);
 
   @override
-  Future<bool?> getBool(String key) => box.get(key);
+  Future<bool?> getBool(String key) async => await box.get(key);
 
   @override
   Future<void> setDouble(String key, double value) => box.put(key, value);
 
   @override
-  Future<double?> getDouble(String key) => box.get(key);
+  Future<double?> getDouble(String key) async => await box.get(key);
 
   @override
   Future<void> setInt(String key, int value) => box.put(key, value);
@@ -74,7 +75,9 @@ class HiveBackend extends StorageBackend {
 
   @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
-    final data = <String, dynamic>{...box.toMap()};
+    final data = <String, dynamic>{
+      for (final key in box.keys) key.toString(): await box.get(key),
+    };
     if (allowList != null && allowList.isNotEmpty) {
       data.removeWhere((key, value) => !allowList.contains(key));
     }
@@ -88,7 +91,7 @@ class HiveBackend extends StorageBackend {
   Future<void> remove(String key) => box.delete(key);
 
   @override
-  Future<void> removeAll(Iterable<String> keys) => box.deleteAll(keys);
+  Future<void> removeAll(Iterable<String> keys) async => await box.deleteAll(keys);
 
   @override
   Future<bool> containsKey(String key) async => box.containsKey(key);

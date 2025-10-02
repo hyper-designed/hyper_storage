@@ -2,12 +2,39 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart' show protected;
 
-import 'api/backend.dart';
+import '../hyper_storage.dart';
 import 'api/storage_container.dart';
-import 'item_holder.dart';
-import 'json_storage_container.dart';
 
-class HyperStorageContainer extends StorageContainer with GenericStorageOperationsMixin {
+/// A concrete implementation of [StorageContainer] for storing key-value pairs.
+///
+/// [HyperStorageContainer] provides a complete, production-ready implementation
+/// of the storage container API. It handles all primitive data types,
+/// collections, and special types like [DateTime] and [Duration]. The container
+/// manages key encoding/decoding, notification of listeners, and validation of
+/// all operations.
+///
+/// ## Key Validation
+///
+/// All keys are validated before operations:
+/// - Keys cannot be empty
+/// - Keys cannot contain only whitespace
+/// - Keys are checked by [validateKey] before any operation
+///
+/// See also:
+/// - [StorageContainer] for the base class and abstract interface
+class HyperStorageContainer extends StorageContainer with ItemHolderMixin, GenericStorageOperationsMixin {
+  /// Creates a new [HyperStorageContainer] instance.
+  ///
+  /// This constructor is marked [@protected] because containers should
+  /// typically be created through [HyperStorage.container] rather than
+  /// directly instantiated. Direct instantiation bypasses the container
+  /// caching system.
+  ///
+  /// Parameters:
+  ///   * [backend] - The storage backend that handles actual persistence.
+  ///   * [name] - The name of the container, used as a prefix for all keys.
+  ///   * [delimiter] - Optional. The character(s) used to separate the
+  ///     container name from keys. If not provided, uses the default delimiter.
   @protected
   HyperStorageContainer({
     required super.backend,
@@ -23,18 +50,6 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
     validateKey(key);
     await backend.remove(encodeKey(key));
     notifyListeners(key);
-  }
-
-  @override
-  Future<void> clear() async {
-    final encodedKeys = await getEncodedKeys();
-    final decodedKeys = encodedKeys.map(decodeKey).toList();
-    await backend.removeAll(encodedKeys);
-    for (final key in decodedKeys) {
-      notifyKeyListeners(key);
-    }
-    notifyListeners();
-    removeAllListeners();
   }
 
   @override
@@ -211,20 +226,15 @@ class HyperStorageContainer extends StorageContainer with GenericStorageOperatio
     await backend.close();
   }
 
-  /// Allows to easily store and retrieve serializable objects in the storage for given key.
-  Future<HyperStorageItemHolder<T>> keyHolder<T>(
-    String key, {
-    required FromJson<T> fromJson,
-    required ToJson<T> toJson,
-  }) async {
-    validateKey(key);
-    return HyperStorageItemHolder<T>(
-      backend,
-      encodeKey(key),
-      key: key,
-      fromJson: fromJson,
-      toJson: toJson,
-      onChanged: () => notifyListeners(key),
-    );
+  @override
+  Future<void> clear() async {
+    final encodedKeys = await getEncodedKeys();
+    final decodedKeys = encodedKeys.map(decodeKey).toList();
+    await backend.removeAll(encodedKeys);
+    for (final key in decodedKeys) {
+      notifyKeyListeners(key);
+    }
+    notifyListeners();
+    removeAllListeners();
   }
 }
