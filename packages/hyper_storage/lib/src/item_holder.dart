@@ -92,7 +92,7 @@ class ItemHolder<E extends Object> implements BaseListenable, ItemHolderApi<E> {
   @internal
   @protected
   // ignore: invalid_use_of_protected_member
-  void notifyListeners() => _parent?.notifyKeyListeners(_key);
+  void notifyListeners() => _parent?.notifyListeners(_key);
 
   @override
   void removeAllListeners() => _parent?.removeAllKeyListeners(_key);
