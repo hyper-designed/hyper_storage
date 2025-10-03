@@ -97,10 +97,7 @@ class LazyHiveBackend extends StorageBackend {
   Future<bool> containsKey(String key) async => box.containsKey(key);
 
   @override
-  Future<void> clear() => box.clear();
-
-  @override
-  Future<void> destroy() => Hive.deleteFromDisk();
+  Future<void> clear() => Hive.deleteFromDisk();
 
   @override
   Future<void> close() async {

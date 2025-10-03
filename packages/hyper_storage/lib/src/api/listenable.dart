@@ -20,6 +20,7 @@ typedef ListenableCallback = void Function();
 /// - All listener exceptions are caught and silently ignored to ensure robustness.
 /// - When notifying listeners, global listeners are called first, followed by key-specific listeners.
 @protected
+@internal
 mixin ListenableStorage {
   /// Internal storage for global listeners.
   ///
@@ -45,6 +46,9 @@ mixin ListenableStorage {
     }
     return false;
   }
+
+  /// Returns `true` if there are any listeners registered for the given [key].
+  bool hasKeyListeners(String key) => _keyedListeners[key]?.isNotEmpty == true;
 
   /// Registers a global listener to be called when any data in the storage
   /// changes.
@@ -118,6 +122,20 @@ mixin ListenableStorage {
     }
   }
 
+  /// Removes all listeners registered for a specific [key].
+  ///
+  /// If no listeners are registered for the given key, this method has no effect.
+  /// After calling this method, no listeners for the specified key will be notified
+  /// of changes until new listeners are registered.
+  ///
+  /// Parameters:
+  ///   - [key] - The storage key whose listeners should be removed.
+  ///
+  /// See also:
+  ///   - [removeListener] to remove a specific global listener.
+  ///   - [removeAllListeners] to clear all listeners.
+  void removeAllKeyListeners(String key) => _keyedListeners.remove(key);
+
   /// Removes all registered listeners, both global and key-specific.
   ///
   /// This method clears all listener registrations, both global listeners and
@@ -189,6 +207,9 @@ mixin ListenableStorage {
   /// See also:
   /// - [notifyListeners] which calls this method when a key is provided
   /// - [addKeyListener] to register key-specific listeners
+  @mustCallSuper
+  @internal
+  @protected
   void notifyKeyListeners(String key) {
     final listeners = _keyedListeners[key];
     if (listeners != null) {
@@ -272,6 +293,7 @@ mixin BaseListenable {
   /// - [addListener] to register global listeners
   @protected
   @mustCallSuper
+  @internal
   void notifyListeners() {
     for (final listener in _listeners) {
       try {

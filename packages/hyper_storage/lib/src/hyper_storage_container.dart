@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:meta/meta.dart' show protected;
 
 import '../hyper_storage.dart';
+import 'api/backend.dart';
 import 'api/storage_container.dart';
 
 /// A concrete implementation of [StorageContainer] for storing key-value pairs.
@@ -22,7 +23,7 @@ import 'api/storage_container.dart';
 ///
 /// See also:
 /// - [StorageContainer] for the base class and abstract interface
-class HyperStorageContainer extends StorageContainer with ItemHolderMixin, GenericStorageOperationsMixin {
+final class HyperStorageContainer extends StorageContainer with ItemHolderMixin, GenericStorageOperationsMixin {
   /// Creates a new [HyperStorageContainer] instance.
   ///
   /// This constructor is marked [@protected] because containers should

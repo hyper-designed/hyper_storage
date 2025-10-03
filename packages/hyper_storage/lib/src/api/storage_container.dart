@@ -1,5 +1,6 @@
 import 'package:meta/meta.dart';
 
+import 'api.dart';
 import 'backend.dart';
 import 'listenable.dart';
 
@@ -37,7 +38,7 @@ import 'listenable.dart';
 /// - [SerializableStorageContainer] for object storage
 @protected
 @internal
-abstract class StorageContainer with ListenableStorage {
+abstract class StorageContainer extends BaseStorage {
   /// The name of the storage container, used for namespacing keys.
   ///
   /// This name is prepended to all keys stored in this container, creating
@@ -51,14 +52,6 @@ abstract class StorageContainer with ListenableStorage {
   /// when encoding keys. It must be a character (or sequence) that won't
   /// appear in container names or keys to ensure proper isolation.
   final String delimiter;
-
-  /// The storage backend used to persist data.
-  ///
-  /// This backend provides the actual storage implementation (e.g., shared
-  /// preferences, Hive, in-memory storage). The container uses this backend
-  /// to perform all read/write operations with properly encoded keys.
-  @protected
-  final StorageBackend backend;
 
   /// The default delimiter to use if one is not provided.
   ///
@@ -97,7 +90,7 @@ abstract class StorageContainer with ListenableStorage {
   ///   * [ArgumentError] if the name is invalid (empty, whitespace-only, or
   ///     contains the delimiter)
   StorageContainer({
-    required this.backend,
+    required super.backend,
     required this.name,
     String? delimiter,
   }) : delimiter = delimiter ?? defaultDelimiter {
@@ -261,7 +254,7 @@ abstract class StorageContainer with ListenableStorage {
   ///
   /// See also:
   /// - [encodeKey] for the reverse operation
-  /// - [_isAssociatedKey] for checking if a key belongs to this container
+  /// - [isAssociatedKey] for checking if a key belongs to this container
   @protected
   @visibleForTesting
   @internal
@@ -284,7 +277,9 @@ abstract class StorageContainer with ListenableStorage {
   ///   * [StateError] if the container name is empty or only whitespace when
   ///     performing the check. This should never happen in normal operation as
   ///     the name is validated during construction.
-  bool _isAssociatedKey(String rawKey) {
+  @internal
+  @protected
+  bool isAssociatedKey(String rawKey) {
     if (name.isEmpty) throw StateError('Container name cannot be empty when checking associated keys.');
     if (name.trim().isEmpty) {
       throw StateError('Container name cannot be only whitespace when checking associated keys.');
@@ -305,11 +300,11 @@ abstract class StorageContainer with ListenableStorage {
   ///
   /// See also:
   /// - [getDecodedKeys] for getting keys without the container prefix
-  /// - [_isAssociatedKey] which is used for filtering
+  /// - [isAssociatedKey] which is used for filtering
   @protected
   Future<Set<String>> getEncodedKeys() async {
     final allKeys = await backend.getKeys();
-    return allKeys.where(_isAssociatedKey).toSet();
+    return allKeys.where(isAssociatedKey).toSet();
   }
 
   /// Returns a set of all decoded keys in the container.
@@ -326,11 +321,11 @@ abstract class StorageContainer with ListenableStorage {
   /// See also:
   /// - [getEncodedKeys] for getting keys with the container prefix
   /// - [decodeKey] which is used to decode each key
-  /// - [_isAssociatedKey] which is used for filtering
+  /// - [isAssociatedKey] which is used for filtering
   @protected
   Future<Set<String>> getDecodedKeys() async {
     final allKeys = await backend.getKeys();
-    return allKeys.where(_isAssociatedKey).map(decodeKey).toSet();
+    return allKeys.where(isAssociatedKey).map(decodeKey).toSet();
   }
 
   /// Clears all data stored in this container.
@@ -353,4 +348,42 @@ abstract class StorageContainer with ListenableStorage {
   ///   A future that completes when the container has been closed and all
   ///   resources have been released.
   Future<void> close();
+
+  @override
+  bool hasKeyListeners(String key) {
+    if (isAssociatedKey(key)) return super.hasKeyListeners(key);
+    return super.hasKeyListeners(encodeKey(key));
+  }
+
+  @override
+  void addKeyListener(String key, ListenableCallback listener) {
+    if (isAssociatedKey(key)) return super.addKeyListener(key, listener);
+    super.addKeyListener(encodeKey(key), listener);
+  }
+
+  @override
+  void removeKeyListener(String key, ListenableCallback listener) {
+    if (isAssociatedKey(key)) return super.removeKeyListener(key, listener);
+    super.removeKeyListener(encodeKey(key), listener);
+  }
+
+  @override
+  void removeAllKeyListeners(String key) {
+    if (isAssociatedKey(key)) return super.removeAllKeyListeners(key);
+    super.removeAllKeyListeners(encodeKey(key));
+  }
+
+  @override
+  void notifyKeyListeners(String key) {
+    if (isAssociatedKey(key)) return super.notifyKeyListeners(key);
+    super.notifyKeyListeners(encodeKey(key));
+  }
+
+  @override
+  void notifyListeners([String? key]) {
+    if (key == null) return super.notifyListeners(key);
+
+    if (isAssociatedKey(key)) return super.notifyListeners(key);
+    super.notifyListeners(encodeKey(key));
+  }
 }

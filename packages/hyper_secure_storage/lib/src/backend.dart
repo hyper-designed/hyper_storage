@@ -110,9 +110,6 @@ class SecureStorageBackend extends StorageBackend {
   Future<void> clear() => storage.deleteAll();
 
   @override
-  Future<void> destroy() => storage.deleteAll();
-
-  @override
   Future<void> close() async {
     // Nothing to close
   }

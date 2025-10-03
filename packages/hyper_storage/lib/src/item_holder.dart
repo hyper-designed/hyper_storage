@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
+
 import '../hyper_storage.dart';
 import 'api/api.dart';
 
@@ -16,8 +18,8 @@ typedef ItemSetter<E extends Object> = Future<void> Function(StorageBackend back
 /// in a storage backend. It requires custom setter and getter functions
 /// to handle the specific type [E]. This is useful for types that do not
 /// require complex serialization, or when you want to manage the serialization
-class ItemHolder<E extends Object> with BaseListenable implements ItemHolderApi<E> {
-  StorageBackend? _backend;
+class ItemHolder<E extends Object> implements BaseListenable, ItemHolderApi<E> {
+  BaseStorage? _parent;
   final String _key;
 
   /// Custom getter function to retrieve the item from the backend.
@@ -39,23 +41,24 @@ class ItemHolder<E extends Object> with BaseListenable implements ItemHolderApi<
   final ItemSetter<E>? setter;
 
   /// Creates a new [ItemHolder] instance.
-  ItemHolder(StorageBackend this._backend, this._key, {this.getter, this.setter});
+  ItemHolder(BaseStorage this._parent, this._key, {this.getter, this.setter});
 
   @override
-  Future<bool> get exists => _backend?.containsKey(_key) ?? Future.value(false);
+  Future<bool> get exists => _parent?.backend.containsKey(_key) ?? Future.value(false);
 
   @override
-  Future<E?> get() {
-    if (_backend case var backend?) {
+  Future<E?> get() async {
+    if (_parent case BaseStorage(:final backend)) {
       if (getter case var getter?) return getter(backend, _key);
-      return backend.get(_key);
+      final E? value = await backend.get(_key);
+      return value;
     }
     return Future.value(null);
   }
 
   @override
   Future<void> remove() async {
-    if (_backend case var backend?) {
+    if (_parent case BaseStorage(:final backend)) {
       await backend.remove(_key);
       notifyListeners();
     }
@@ -63,7 +66,7 @@ class ItemHolder<E extends Object> with BaseListenable implements ItemHolderApi<
 
   @override
   Future<void> set(E value) async {
-    if (_backend case var backend?) {
+    if (_parent case BaseStorage(:final backend)) {
       if (setter case var setter?) {
         await setter(backend, _key, value);
       } else {
@@ -76,8 +79,26 @@ class ItemHolder<E extends Object> with BaseListenable implements ItemHolderApi<
   @override
   void dispose() {
     removeAllListeners();
-    _backend = null;
+    _parent = null;
   }
+
+  @override
+  void addListener(ListenableCallback listener) => _parent?.addKeyListener(_key, listener);
+
+  @override
+  bool get hasListeners => _parent?.hasKeyListeners(_key) == true;
+
+  @override
+  @internal
+  @protected
+  // ignore: invalid_use_of_protected_member
+  void notifyListeners() => _parent?.notifyKeyListeners(_key);
+
+  @override
+  void removeAllListeners() => _parent?.removeAllKeyListeners(_key);
+
+  @override
+  void removeListener(ListenableCallback listener) => _parent?.removeKeyListener(_key, listener);
 }
 
 /// A base class for item holders that manage serialization and deserialization.
@@ -161,10 +182,7 @@ final class JsonItemHolder<E extends Object> extends SerializableItemHolder<E> {
 /// item holders, including JSON-serializable, generic serializable, and primitive
 /// type holders. Each item holder is automatically linked to the container's
 /// change notification system.
-mixin ItemHolderMixin implements ListenableStorage {
-  /// The storage backend used for persistence operations.
-  StorageBackend get backend;
-
+mixin ItemHolderMixin on BaseStorage {
   /// Stub method for encoding keys. Can be overridden by subclasses.
   String encodeKey(String key) => key;
 
@@ -208,12 +226,7 @@ mixin ItemHolderMixin implements ListenableStorage {
     required ToJson<E> toJson,
   }) {
     validateKey(key);
-    return JsonItemHolder<E>(
-      backend,
-      encodeKey(key),
-      fromJson: fromJson,
-      toJson: toJson,
-    )..addListener(() => notifyListeners(key));
+    return JsonItemHolder<E>(this, encodeKey(key), fromJson: fromJson, toJson: toJson);
   }
 
   /// Creates an item holder for storing a single serializable object at the specified key.
@@ -251,12 +264,7 @@ mixin ItemHolderMixin implements ListenableStorage {
     required DeserializeCallback<E> deserialize,
   }) {
     validateKey(key);
-    return SerializableItemHolder<E>(
-      backend,
-      encodeKey(key),
-      serialize: serialize,
-      deserialize: deserialize,
-    )..addListener(() => notifyListeners(key));
+    return SerializableItemHolder<E>(this, encodeKey(key), serialize: serialize, deserialize: deserialize);
   }
 
   /// Creates an item holder for storing a single primitive value at the specified key.
@@ -300,7 +308,7 @@ mixin ItemHolderMixin implements ListenableStorage {
     }
     // Only run generic type validation if custom getter/setter are not provided.
     if (set == null || get == null) _validateGenericType<E>();
-    return ItemHolder<E>(backend, encodeKey(key), setter: set, getter: get)..addListener(() => notifyListeners(key));
+    return ItemHolder<E>(this, encodeKey(key), setter: set, getter: get);
   }
 
   /// Creates a custom item holder using the provided factory function.
@@ -331,8 +339,7 @@ mixin ItemHolderMixin implements ListenableStorage {
     required H Function(StorageBackend backend, String key) create,
   }) {
     validateKey(key);
-    final holder = create(backend, encodeKey(key));
-    return holder..addListener(() => notifyListeners(key));
+    return create(backend, encodeKey(key));
   }
 
   bool _validateGenericType<E>() {

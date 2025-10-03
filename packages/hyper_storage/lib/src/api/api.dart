@@ -1,5 +1,8 @@
 import 'package:meta/meta.dart';
 
+import 'backend.dart';
+import 'listenable.dart';
+
 /// Defines the interface for storage operations on serializable objects of
 /// type [E].
 ///
@@ -790,4 +793,25 @@ abstract interface class StorageOperationsApi {
   /// Returns a [Future] that completes when the storage has been closed and all
   /// resources have been released.
   Future<void> close();
+}
+
+/// A base class for storage implementations that use a [StorageBackend].
+///
+/// This class provides common functionality for storage classes that interact
+/// with a backend storage system. It implements the [ListenableStorage] interface
+/// to allow listening for changes in the storage.
+///
+/// The [backend] is required and must be provided when creating an instance
+/// of a subclass.
+abstract class BaseStorage with ListenableStorage {
+  /// The backend storage system used for actual data persistence.
+  ///
+  /// This backend is responsible for the low-level storage operations.
+  /// Subclasses of [BaseStorage] will use this backend to perform their
+  /// storage tasks.
+  @internal
+  final StorageBackend backend;
+
+  /// Creates a new instance of [BaseStorage] with the given [backend].
+  BaseStorage({required this.backend});
 }

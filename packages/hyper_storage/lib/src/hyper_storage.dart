@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 
 import '../hyper_storage.dart';
 import 'api/api.dart';
+import 'api/backend.dart';
 import 'api/storage_container.dart';
 
 part 'storage_base.dart';
@@ -38,7 +39,7 @@ part 'storage_base.dart';
 /// - [JsonStorageContainer] for JSON serialization
 /// - [SerializableStorageContainer] for custom object storage
 /// - [StorageBackend] for implementing custom backends
-class HyperStorage extends _StorageBase {
+class HyperStorage extends _HyperStorageImpl {
   /// Cache of basic storage containers indexed by name.
   ///
   /// This map stores [StorageContainer] instances created through the
@@ -62,12 +63,12 @@ class HyperStorage extends _StorageBase {
   ///
   /// Parameters:
   ///   * [backend] - The storage backend to use for all operations.
-  HyperStorage._(super.backend);
+  HyperStorage._({required super.backend});
 
   /// Creates a new instance of [HyperStorage] with the specified backend.
   static Future<HyperStorage> newInstance({required StorageBackend backend}) async {
     await backend.init();
-    return HyperStorage._(backend);
+    return HyperStorage._(backend: backend);
   }
 
   /// The singleton instance of [HyperStorage].
@@ -132,7 +133,7 @@ class HyperStorage extends _StorageBase {
       return instance;
     }
     await backend.init();
-    return _instance = HyperStorage._(backend);
+    return _instance = HyperStorage._(backend: backend);
   }
 
   /// Initializes HyperStorage with an in-memory backend for testing purposes.
@@ -162,7 +163,7 @@ class HyperStorage extends _StorageBase {
 
     final backend = InMemoryBackend.withData(initialData: initialData);
     await backend.init();
-    return _instance = HyperStorage._(backend);
+    return _instance = HyperStorage._(backend: backend);
   }
 
   /// Retrieves or creates a basic storage container with the specified name.
