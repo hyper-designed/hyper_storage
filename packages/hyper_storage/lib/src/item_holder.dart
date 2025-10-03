@@ -18,7 +18,7 @@ typedef ItemSetter<E extends Object> = Future<void> Function(StorageBackend back
 /// in a storage backend. It requires custom setter and getter functions
 /// to handle the specific type [E]. This is useful for types that do not
 /// require complex serialization, or when you want to manage the serialization
-class ItemHolder<E extends Object> implements BaseListenable, ItemHolderApi<E> {
+class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, ItemHolderApi<E> {
   BaseStorage? _parent;
   final String _key;
 
@@ -39,6 +39,8 @@ class ItemHolder<E extends Object> implements BaseListenable, ItemHolderApi<E> {
   /// If either getter or setter is provided, both must be provided.
   /// This ensures that the item can be both retrieved and stored correctly.
   final ItemSetter<E>? setter;
+
+  final StreamController<E?> _streamController = StreamController<E?>.broadcast();
 
   /// Creates a new [ItemHolder] instance.
   ItemHolder(BaseStorage this._parent, this._key, {this.getter, this.setter});
@@ -77,12 +79,6 @@ class ItemHolder<E extends Object> implements BaseListenable, ItemHolderApi<E> {
   }
 
   @override
-  void dispose() {
-    removeAllListeners();
-    _parent = null;
-  }
-
-  @override
   void addListener(ListenableCallback listener) => _parent?.addKeyListener(_key, listener);
 
   @override
@@ -99,6 +95,34 @@ class ItemHolder<E extends Object> implements BaseListenable, ItemHolderApi<E> {
 
   @override
   void removeListener(ListenableCallback listener) => _parent?.removeKeyListener(_key, listener);
+
+  @override
+  StreamSubscription<E?> listen(
+    void Function(E? event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
+    // load initial value
+    get().then((value) {
+      if (_streamController.isClosed) return;
+      _streamController.add(value);
+    });
+
+    return _streamController.stream.listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
+  }
+
+  @override
+  void dispose() {
+    removeAllListeners();
+    _streamController.close();
+    _parent = null;
+  }
 }
 
 /// A base class for item holders that manage serialization and deserialization.
