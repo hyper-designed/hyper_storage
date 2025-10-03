@@ -159,15 +159,15 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
   @override
   Future<E?> get<E extends Object>(String key) async {
     return switch (E) {
-      const (String) => getString(key) as E?,
-      const (int) => getInt(key) as E?,
-      const (double) => getDouble(key) as E?,
-      const (bool) => getBool(key) as E?,
-      const (DateTime) => getDateTime(key) as E?,
-      const (Duration) => getDuration(key) as E?,
-      const (List<String>) => getStringList(key) as E?,
-      const (Map<String, dynamic>) => getJson(key) as E?,
-      const (List<Map<String, dynamic>>) => getJsonList(key) as E?,
+      const (String) => await getString(key) as E?,
+      const (int) => await getInt(key) as E?,
+      const (double) => await getDouble(key) as E?,
+      const (bool) => await getBool(key) as E?,
+      const (DateTime) => await getDateTime(key) as E?,
+      const (Duration) => await getDuration(key) as E?,
+      const (List<String>) => await getStringList(key) as E?,
+      const (Map<String, dynamic>) => await getJson(key) as E?,
+      const (List<Map<String, dynamic>>) => await getJsonList(key) as E?,
       _ => throw UnsupportedError('Type $E is not supported'),
     };
   }

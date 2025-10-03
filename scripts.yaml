@@ -1,0 +1,11 @@
+lcov:
+  - cd packages/hyper_storage && dart pub run coverage:test_with_coverage
+  - cd packages/hyper_storage && dart pub run coverage:format_coverage --packages=.dart_tool/package_config.json --lcov -i coverage/coverage.json -o coverage/lcov.info
+cov:
+  - $lcov
+  - cd packages/hyper_storage && genhtml coverage/lcov.info -o coverage/html
+open_cov:
+  - cd packages/hyper_storage && open coverage/html/index.html
+test:
+  - dart test .
+format: dart format --fix .

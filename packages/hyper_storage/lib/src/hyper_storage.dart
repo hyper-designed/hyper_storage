@@ -190,10 +190,10 @@ class HyperStorage extends _HyperStorageImpl {
   /// - [jsonSerializableContainer] for storing custom objects with JSON
   /// - [objectContainer] for custom serialization logic
   /// - [StorageContainer] for available operations
-  static Future<StorageContainer> container(String name) async {
-    if (instance._containers.containsKey(name)) return instance._containers[name]!;
-    final container = await instance.backend.container(name);
-    return instance._containers[name] = container;
+  Future<StorageContainer> container(String name) async {
+    if (_containers.containsKey(name)) return _containers[name]!;
+    final container = await backend.container(name);
+    return _containers[name] = container;
   }
 
   /// Creates or retrieves a JSON-serializable storage container for custom objects.
@@ -237,7 +237,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// - [container] for basic storage containers
   /// - [objectContainer] for custom serialization logic
   /// - [JsonStorageContainer] for available operations
-  static Future<JsonStorageContainer<E>> jsonSerializableContainer<E>(
+  Future<JsonStorageContainer<E>> jsonSerializableContainer<E>(
     String name, {
     required ToJson<E> toJson,
     required FromJson<E> fromJson,
@@ -246,14 +246,14 @@ class HyperStorage extends _HyperStorageImpl {
     int? seed,
     String? delimiter,
   }) async {
-    if (instance._objectContainers.containsKey(name)) {
-      final existing = instance._objectContainers[name]!;
+    if (_objectContainers.containsKey(name)) {
+      final existing = _objectContainers[name]!;
       if (existing case JsonStorageContainer<E>()) return existing;
 
       throw StateError('Container with name $name already exists with different type: ${existing.runtimeType}.');
     }
     final container = JsonStorageContainer<E>(
-      backend: instance.backend,
+      backend: backend,
       name: name,
       fromJson: fromJson,
       toJson: toJson,
@@ -262,7 +262,7 @@ class HyperStorage extends _HyperStorageImpl {
       random: random,
       seed: seed,
     );
-    return instance._objectContainers[name] = container;
+    return _objectContainers[name] = container;
   }
 
   /// Creates or retrieves a custom serializable storage container.
@@ -293,63 +293,21 @@ class HyperStorage extends _HyperStorageImpl {
   ///   * [StateError] if a container with the same name already exists but with
   ///     a different type.
   ///
-  /// Example:
-  /// ```dart
-  /// // Define a custom container
-  /// class UserContainer extends SerializableStorageContainer<User> {
-  ///   UserContainer(StorageBackend backend)
-  ///     : super(
-  ///         backend: backend,
-  ///         name: 'users',
-  ///         idGetter: (user) => user.id,
-  ///       );
-  ///
-  ///   @override
-  ///   String serialize(User user) {
-  ///     // Custom serialization logic
-  ///     return '${user.id}|${user.name}|${user.email}';
-  ///   }
-  ///
-  ///   @override
-  ///   User deserialize(String value) {
-  ///     // Custom deserialization logic
-  ///     final parts = value.split('|');
-  ///     return User(parts[0], parts[1], parts[2]);
-  ///   }
-  ///
-  ///   // Add custom methods
-  ///   Future<List<User>> getActiveUsers() async {
-  ///     final all = await getAll();
-  ///     return all.values.where((u) => u.isActive).toList();
-  ///   }
-  /// }
-  ///
-  /// // Use the custom container
-  /// final users = await HyperStorage.objectContainer<User, UserContainer>(
-  ///   'users',
-  ///   factory: () => UserContainer(HyperStorage.instance.backend),
-  /// );
-  ///
-  /// // Use custom methods
-  /// await users.add(User('1', 'John', 'john@example.com', true));
-  /// final activeUsers = await users.getActiveUsers();
-  /// ```
-  ///
   /// See also:
   /// - [container] for basic storage containers
   /// - [jsonSerializableContainer] for JSON serialization
   /// - [SerializableStorageContainer] for the base container class
-  static Future<F> objectContainer<E, F extends SerializableStorageContainer<E>>(
+  Future<F> objectContainer<E, F extends SerializableStorageContainer<E>>(
     String name, {
     required F Function() factory,
   }) async {
-    if (instance._objectContainers.containsKey(name)) {
-      final existing = instance._objectContainers[name]!;
+    if (_objectContainers.containsKey(name)) {
+      final existing = _objectContainers[name]!;
       if (existing is F) return existing;
       throw StateError('Container with name $name already exists with different type: ${existing.runtimeType}.');
     }
     final F container = factory();
-    return instance._objectContainers[name] = container;
+    return _objectContainers[name] = container;
   }
 
   /// Destroys the HyperStorage instance and deletes all stored data.
