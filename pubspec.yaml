@@ -10,3 +10,4 @@ workspace:
   - packages/hyper_storage_hive
   - packages/hyper_storage_shared_preferences
   - packages/hyper_secure_storage
+  - packages/hyper_storage_flutter
