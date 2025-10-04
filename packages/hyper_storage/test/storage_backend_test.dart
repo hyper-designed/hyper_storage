@@ -69,7 +69,10 @@ class MinimalBackend extends StorageBackend {
   @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
     if (allowList == null) return Map.from(_data);
-    return {for (final key in allowList) if (_data.containsKey(key)) key: _data[key]};
+    return {
+      for (final key in allowList)
+        if (_data.containsKey(key)) key: _data[key],
+    };
   }
 }
 
@@ -331,10 +334,10 @@ void main() {
 
       test('get<List<Map<String, dynamic>>> retrieves JSON list', () async {
         await backend.setJsonList('key', [
-          {'id': 1}
+          {'id': 1},
         ]);
         expect(await backend.get<List<Map<String, dynamic>>>('key'), [
-          {'id': 1}
+          {'id': 1},
         ]);
       });
     });
@@ -386,11 +389,11 @@ void main() {
       test('set with List<Map<String, dynamic>> value', () async {
         await backend.set('key', [
           {'id': 1},
-          {'id': 2}
+          {'id': 2},
         ]);
         expect(await backend.getJsonList('key'), [
           {'id': 1},
-          {'id': 2}
+          {'id': 2},
         ]);
       });
     });

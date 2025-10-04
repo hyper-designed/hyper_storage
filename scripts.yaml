@@ -7,5 +7,10 @@ cov:
 open_cov:
   - cd packages/hyper_storage && open coverage/html/index.html
 test:
-  - dart test .
+  - cd packages/hyper_storage && dart run test
+  - cd packages/hyper_storage_hive && dart run test
+  - cd packages/hyper_storage_shared_preference && flutter test
+  - cd packages/hyper_secure_storage && flutter test
+  - cd packages/hyper_storage_flutter && flutter test
+
 format: dart format --fix .

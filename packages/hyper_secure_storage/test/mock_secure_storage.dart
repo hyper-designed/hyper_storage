@@ -111,8 +111,7 @@ class MockFlutterSecureStorage implements FlutterSecureStorage {
   Future<bool> isCupertinoProtectedDataAvailable() => Future.value(true);
 
   @override
-  Stream<bool> get onCupertinoProtectedDataAvailabilityChanged =>
-      Stream.value(true);
+  Stream<bool> get onCupertinoProtectedDataAvailabilityChanged => Stream.value(true);
 
   @override
   void registerListener({required String key, required void Function(String?) listener}) {

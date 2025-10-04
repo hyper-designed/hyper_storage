@@ -622,7 +622,6 @@ void main() {
           throwsStateError,
         );
       });
-
     });
 
     group('objectContainer', () {
@@ -778,8 +777,8 @@ class UserContainer extends SerializableStorageContainer<User> {
     required super.name,
     super.delimiter,
   }) : super(
-          idGetter: (user) => user.id,
-        );
+         idGetter: (user) => user.id,
+       );
 
   @override
   String serialize(User value) => value.serialize();
@@ -795,8 +794,8 @@ class ProductContainer extends SerializableStorageContainer<Product> {
     required super.name,
     super.delimiter,
   }) : super(
-          idGetter: (product) => product.id,
-        );
+         idGetter: (product) => product.id,
+       );
 
   @override
   String serialize(Product value) {
@@ -826,7 +825,11 @@ class Product {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Product && runtimeType == other.runtimeType && id == other.id && name == other.name && price == other.price;
+      other is Product &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          price == other.price;
 
   @override
   int get hashCode => id.hashCode ^ name.hashCode ^ price.hashCode;

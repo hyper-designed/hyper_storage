@@ -561,16 +561,16 @@ class CustomUserHolder extends ItemHolder<User> {
   final String _encodedKey;
 
   CustomUserHolder(HyperStorageContainer parent, StorageBackend backend, this._encodedKey)
-      : super(
-          parent,
-          _encodedKey,
-          getter: (backend, key) async {
-            final json = await backend.getJson(key);
-            if (json == null) return null;
-            return User.fromJson(json);
-          },
-          setter: (backend, key, value) => backend.setJson(key, value.toJson()),
-        );
+    : super(
+        parent,
+        _encodedKey,
+        getter: (backend, key) async {
+          final json = await backend.getJson(key);
+          if (json == null) return null;
+          return User.fromJson(json);
+        },
+        setter: (backend, key, value) => backend.setJson(key, value.toJson()),
+      );
 
   String get key => _encodedKey;
 }

@@ -24,54 +24,27 @@ extension HyperStorageExt on HyperStorage {
   /// to avoid memory leaks.
   ///
   /// This can be done by cancelling the subscription to the stream.
-  Stream<E?> stream<E>(String key) async* {
-    final E? itemValue = await get(key);
+  Stream<E?> stream<E extends Object>(String key) async* {
+    final E? itemValue = await get<E>(key);
     yield itemValue;
-    final controller = StreamController<E?>();
 
-    void retrieveAndAdd() async {
-      if (controller.isClosed) {
-        removeListener(retrieveAndAdd);
-        return;
+    late final void Function() retrieveAndAdd;
+    final controller = StreamController<E?>(
+      onCancel: () => removeListener(retrieveAndAdd),
+    );
+
+    retrieveAndAdd = () async {
+      if (controller.isClosed) return;
+      final E? value = await get<E>(key);
+      if (!controller.isClosed) {
+        controller.add(value);
       }
-      final E? value = await get(key);
-      controller.add(value);
-    }
+    };
 
     addListener(retrieveAndAdd);
 
     yield* controller.stream;
-  }
-}
-
-/// Extensions for [HyperStorageContainer] to provide a stream of values for a given key.
-/// This is similar to the [HyperStorageExt] but scoped to a specific container.
-extension HyperStorageContainerExt on HyperStorage {
-  /// Provides a [Stream] of values for the given [key] in the container.
-  /// The stream will emit the current value of the key and will update
-  /// whenever the value changes.
-  ///
-  /// It is important to close the stream when it is no longer needed
-  /// to avoid memory leaks.
-  ///
-  /// This can be done by cancelling the subscription to the stream.
-  Stream<E?> stream<E>(String key) async* {
-    final E? itemValue = await get(key);
-    yield itemValue;
-    final controller = StreamController<E?>();
-
-    void retrieveAndAdd() async {
-      if (controller.isClosed) {
-        removeListener(retrieveAndAdd);
-        return;
-      }
-      final E? value = await get(key);
-      controller.add(value);
-    }
-
-    addListener(retrieveAndAdd);
-
-    yield* controller.stream;
+    await controller.close();
   }
 }
 
@@ -81,6 +54,7 @@ extension HyperStorageContainerExt on HyperStorage {
 /// It is important to dispose of this notifier when it is no longer needed to avoid memory leaks.
 class _ItemNotifier<E extends Object> extends ValueNotifier<E?> {
   final ItemHolder<E> holder;
+  late final void Function() _listener;
 
   _ItemNotifier(this.holder) : super(null) {
     void retrieveAndSet() async {
@@ -88,13 +62,14 @@ class _ItemNotifier<E extends Object> extends ValueNotifier<E?> {
       value = itemValue;
     }
 
+    _listener = retrieveAndSet;
     retrieveAndSet();
-    holder.addListener(retrieveAndSet);
+    holder.addListener(_listener);
   }
 
   @override
   void dispose() {
-    holder.removeListener(() {});
+    holder.removeListener(_listener);
     super.dispose();
   }
 }

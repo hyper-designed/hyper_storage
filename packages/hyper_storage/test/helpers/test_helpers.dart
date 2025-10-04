@@ -10,18 +10,18 @@ class User {
   User(this.id, this.name, this.email, this.age);
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'age': age,
-      };
+    'id': id,
+    'name': name,
+    'email': email,
+    'age': age,
+  };
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        json['id'] as String,
-        json['name'] as String,
-        json['email'] as String,
-        json['age'] as int,
-      );
+    json['id'] as String,
+    json['name'] as String,
+    json['email'] as String,
+    json['age'] as int,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -52,14 +52,14 @@ class Note {
   Note(this.content, this.createdAt);
 
   Map<String, dynamic> toJson() => {
-        'content': content,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'content': content,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory Note.fromJson(Map<String, dynamic> json) => Note(
-        json['content'] as String,
-        DateTime.parse(json['createdAt'] as String),
-      );
+    json['content'] as String,
+    DateTime.parse(json['createdAt'] as String),
+  );
 
   @override
   bool operator ==(Object other) =>

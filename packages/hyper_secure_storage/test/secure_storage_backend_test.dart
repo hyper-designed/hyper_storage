@@ -343,7 +343,11 @@ void main() {
       });
 
       test('JSON operations work via mixin', () async {
-        final json = {'name': 'test', 'value': 42, 'nested': {'key': 'value'}};
+        final json = {
+          'name': 'test',
+          'value': 42,
+          'nested': {'key': 'value'},
+        };
         await backend.setJson('json', json);
         expect(await backend.getJson('json'), json);
       });
@@ -420,9 +424,9 @@ void main() {
         final complex = {
           'users': [
             {'id': 1, 'name': 'Alice'},
-            {'id': 2, 'name': 'Bob'}
+            {'id': 2, 'name': 'Bob'},
           ],
-          'meta': {'count': 2, 'page': 1}
+          'meta': {'count': 2, 'page': 1},
         };
         await backend.setJson('complex', complex);
         expect(await backend.getJson('complex'), complex);

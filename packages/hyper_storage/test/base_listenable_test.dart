@@ -1,4 +1,3 @@
-
 import 'package:hyper_storage/src/api/listenable.dart';
 import 'package:test/test.dart';
 

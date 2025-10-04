@@ -120,8 +120,8 @@ void main() {
           'user': {'name': 'John', 'age': 30},
           'settings': {
             'theme': 'dark',
-            'notifications': {'email': true, 'push': false}
-          }
+            'notifications': {'email': true, 'push': false},
+          },
         };
         await container.setJson('data', json);
         expect(await container.getJson('data'), json);
@@ -130,7 +130,7 @@ void main() {
       test('handles JSON with arrays', () async {
         final json = {
           'items': [1, 2, 3],
-          'tags': ['a', 'b', 'c']
+          'tags': ['a', 'b', 'c'],
         };
         await container.setJson('data', json);
         expect(await container.getJson('data'), json);
@@ -141,7 +141,7 @@ void main() {
       test('setJsonList and getJsonList', () async {
         final list = [
           {'id': 1, 'name': 'Item 1'},
-          {'id': 2, 'name': 'Item 2'}
+          {'id': 2, 'name': 'Item 2'},
         ];
         await container.setJsonList('items', list);
         expect(await container.getJsonList('items'), list);

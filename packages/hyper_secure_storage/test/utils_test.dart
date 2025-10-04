@@ -16,7 +16,7 @@ void main() {
     test('decodes nested JSON', () {
       final result = tryJsonDecode('{"user":{"id":1,"name":"Alice"}}');
       expect(result, {
-        'user': {'id': 1, 'name': 'Alice'}
+        'user': {'id': 1, 'name': 'Alice'},
       });
     });
 
@@ -76,9 +76,9 @@ void main() {
       expect(result, {
         'users': [
           {'id': 1, 'active': true},
-          {'id': 2, 'active': false}
+          {'id': 2, 'active': false},
         ],
-        'count': 2
+        'count': 2,
       });
     });
   });

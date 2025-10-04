@@ -161,7 +161,7 @@ void main() {
       test('setJson handles nested objects', () async {
         final json = {
           'user': {'name': 'John', 'age': 30},
-          'settings': {'theme': 'dark'}
+          'settings': {'theme': 'dark'},
         };
         await backend.setJson('data', json);
         expect(await backend.getJson('data'), json);
@@ -172,7 +172,7 @@ void main() {
       test('setJsonList and getJsonList', () async {
         final list = [
           {'id': '1', 'name': 'Item 1'},
-          {'id': '2', 'name': 'Item 2'}
+          {'id': '2', 'name': 'Item 2'},
         ];
         await backend.setJsonList('items', list);
         expect(await backend.getJsonList('items'), list);
