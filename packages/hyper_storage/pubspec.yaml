@@ -1,5 +1,5 @@
 name: hyper_storage
-description: A starting point for Dart libraries or applications.
+description: A simple and flexible key-value storage for Dart and Flutter applications, supporting multiple backends.
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage

@@ -1,106 +1,65 @@
-# Local Storage
+# hyper_storage
+
+[![pub version](https://img.shields.io/pub/v/hyper_storage.svg)](https://pub.dev/packages/hyper_storage)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+A simple and flexible key-value storage for Dart and Flutter applications, supporting multiple backends.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+-   ✅ **Simple API:** Easy to use API for storing and retrieving data.
+-   ✅ **Multiple Backends:** Supports different backends like `InMemory`, with more to come.
+-   ✅ **Typed Storage:** Store and retrieve data with type safety.
+-   ✅ **JSON Serialization:** Store and retrieve custom objects by providing `toJson` and `fromJson` functions.
+-   ✅ **Named Containers:** Organize your data into named containers.
+-   ✅ **Mockable:** Easy to mock for testing purposes.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add `hyper_storage` to your `pubspec.yaml` dependencies:
+
+```yaml
+dependencies:
+  hyper_storage: ^0.1.0 # Replace with the latest version
+```
+
+Then, run `flutter pub get` or `dart pub get`.
 
 ## Usage
 
-How to initialize and use the local storage backend. Default backend is shared preferences in async mode.
-```dart
-final LocalStorage localStorage = await LocalStorage.init();
-```
-
-How to use hive backend
-```dart
-final LocalStorage localStorage = await LocalStorage.init(backend: HiveBackend());
-```
-Available Backends:
-- SharedPreferencesBackend
-- HiveBackend 
-- InMemoryBackend
-
-Storing data
-```dart
-await localStorage.setString('name', 'John');
-await localStorage.setInt('age', 30);
-await localStorage.setBool('isDeveloper', true);
-await localStorage.setDouble('height', 1.75);
-await localStorage.setStringList('skills', ['Dart', 'Flutter', 'JavaScript']);
-await localStorage.setJson('profile', {
-    'name': 'John Doe',
-    'age': 30,
-    'isDeveloper': true,
-    'height': 1.75,
-    'skills': ['Dart', 'Flutter', 'JavaScript'],
-});
-await localStorage.setJsonList('items', [
-    {'id': 1, 'name': 'Item 1'},
-    {'id': 2, 'name': 'Item 2'},
-    {'id': 3, 'name': 'Item 3'},
-]);
-```
-
-Getting data
-```dart
-final String? name = await localStorage.getString('name');
-final int? age = await localStorage.getInt('age');
-final bool? isDeveloper = await localStorage.getBool('isDeveloper');
-final double? height = await localStorage.getDouble('height');
-final List<String>? skills = await localStorage.getStringList('skills');
-final Map<String, dynamic>? profile = await localStorage.getJson('profile');
-final List<Map<String, dynamic>>? items = await localStorage.getJsonList('items');
-```
-
-Using named containers
-```dart
-final container = await LocalStorage.container('account');
-await container.setString('username', 'john_doe');
-final String? username = await container.getString('username');
-```
-
-Checking if a key exists
+Initialize the storage. The default backend is `InMemoryBackend`.
 
 ```dart
-final bool containsName = await localStorage.containsKey('name');
-final bool containsUsername = await container.containsKey('username');
+import 'package:hyper_storage/hyper_storage.dart';
+
+void main() async {
+  // Initialize the storage
+  final storage = await HyperStorage.init();
+
+  // Set a value
+  await storage.set('name', 'Hyper Storage');
+
+  // Get a value
+  final name = await storage.get('name');
+  print(name); // Output: Hyper Storage
+
+  // Close the storage
+  await storage.close();
+}
 ```
 
-Generics
-```dart
-final bool subscribed = await localStorage.get('subscribed');
-await localStorage.set('age', 32); // sets int value.
-```
+For more detailed examples, please see the [example.md](example.md) file.
 
-Object Containers: JSON serializable containers.
+## Available Backends
 
-```dart
-final storage = await LocalStorage.objectContainer<User>('users',
-toJson: (user) => user.toJson(),
-fromJson: User.fromJson,
-);
+-   `InMemoryBackend`: A simple in-memory backend for temporary storage.
 
-await storage.set('user1', User(name: 'John', age: 23));
-final User? user = await storage.get('user1');
-final List<User> users = await storage.getValues();
-final Map<String, User> allUsers = await storage.getAll();
-```
+More backends are available in separate packages:
 
-Closing the storage
-```dart
-await localStorage.close(); // closes all containers.
-```
+-   [hyper_storage_hive](https://pub.dev/packages/hyper_storage_hive): Hive backend for persistent storage.
+-   [hyper_storage_shared_preferences](https://pub.dev/packages/hyper_storage_shared_preferences): SharedPreferences backend for persistent storage.
+-   [hyper_secure_storage](https://pub.dev/packages/hyper_secure_storage): Secure storage backend for sensitive data.
 
-Use mocked for testing
-```dart
-final storage = await LocalStorage.initMocked();
-```
-Optionally populate with data
-```dart
-final storage = await LocalStorage.initMocked(initialData: {});
-```
+## Contributing
+
+Contributions are welcome! Please feel free to open an issue or submit a pull request.

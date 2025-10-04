@@ -1,39 +1,64 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# hyper_secure_storage
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages). 
+[![pub version](https://img.shields.io/pub/v/hyper_secure_storage.svg)](https://pub.dev/packages/hyper_secure_storage)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages). 
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A backend for `hyper_storage` that uses `flutter_secure_storage` for secure data storage.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+-   **Secure Storage:** Securely persists data on the device using `flutter_secure_storage`.
+-   **Cross-Platform:** Works on iOS, Android, and other platforms supported by `flutter_secure_storage`.
+-   **Easy Integration:** Simple to integrate with `hyper_storage`.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add `hyper_secure_storage` to your `pubspec.yaml` dependencies:
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  hyper_storage: ^0.1.0 # Replace with the latest version
+  hyper_secure_storage: ^0.1.0 # Replace with the latest version
+```
+
+Then, run `flutter pub get`.
+
+### Platform Specific Setup
+
+Please follow the setup instructions for `flutter_secure_storage` for each platform you support:
+
+-   [Android Setup](https://pub.dev/packages/flutter_secure_storage#android)
+-   [iOS Setup](https://pub.dev/packages/flutter_secure_storage#ios)
+-   [Web Setup](https://pub.dev/packages/flutter_secure_storage#web)
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+Initialize `hyper_storage` with `SecureStorageBackend`.
 
 ```dart
-const like = 'sample';
+import 'package:flutter/material.dart';
+import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_secure_storage/hyper_secure_storage_backend.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the storage with SecureStorageBackend
+  final storage = await HyperStorage.init(backend: SecureStorageBackend());
+
+  // Now you can use the storage as usual to store sensitive data
+  await storage.set('api_key', 'your_secret_api_key');
+  final apiKey = await storage.get('api_key');
+  print(apiKey);
+
+  await storage.close();
+}
 ```
 
-## Additional information
+For more detailed examples, please see the [example.md](example.md) file.
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+## Contributing
+
+Contributions are welcome! Please feel free to open an issue or submit a pull request.

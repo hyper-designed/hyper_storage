@@ -1,39 +1,56 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# hyper_storage_shared_preferences
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages). 
+[![pub version](https://img.shields.io/pub/v/hyper_storage_shared_preferences.svg)](https://pub.dev/packages/hyper_storage_shared_preferences)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages). 
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A backend for `hyper_storage` that uses `shared_preferences` for Flutter applications.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+-   **Persistent Storage:** Persists data on the device using `shared_preferences`.
+-   **Flutter Support:** Designed to work seamlessly with Flutter applications.
+-   **Easy Integration:** Simple to integrate with `hyper_storage`.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add `hyper_storage_shared_preferences` to your `pubspec.yaml` dependencies:
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  hyper_storage: ^0.1.0 # Replace with the latest version
+  hyper_storage_shared_preferences: ^0.1.0 # Replace with the latest version
+```
+
+Then, run `flutter pub get`.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+Initialize `hyper_storage` with `SharedPreferencesBackend`.
 
 ```dart
-const like = 'sample';
+import 'package:flutter/material.dart';
+import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the storage with SharedPreferencesBackend
+  final storage = await HyperStorage.init(backend: SharedPreferencesBackend());
+
+  // Now you can use the storage as usual
+  await storage.set('theme', 'dark');
+  final theme = await storage.get('theme');
+  print(theme); // Output: dark
+
+  await storage.close();
+}
 ```
 
-## Additional information
+For more detailed examples, please see the [example.md](example.md) file.
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+## Contributing
+
+Contributions are welcome! Please feel free to open an issue or submit a pull request.
