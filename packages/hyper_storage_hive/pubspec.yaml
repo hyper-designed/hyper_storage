@@ -1,7 +1,9 @@
 name: hyper_storage_hive
-description: A starting point for Dart libraries or applications.
+description: A backend for hyper_storage that uses hive_ce for local data storage.
 version: 0.1.0
-# repository: https://github.com/my_org/my_repo
+
+repository: https://github.com/hyper-designed/hyper_storage
+homepage: https://github.com/hyper-designed/hyper_storage/tree/main/packages/hyper_storage_hive
 
 environment:
   sdk: ^3.9.0

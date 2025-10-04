@@ -1,14 +1,14 @@
 name: hyper_storage_shared_preferences
-description: A starting point for Dart libraries or applications.
+description: A backend for hyper_storage using shared_preferences for Flutter applications.
 version: 0.1.0
-# repository: https://github.com/my_org/my_repo
+
+repository: https://github.com/hyper-designed/hyper_storage
+homepage: https://github.com/hyper-designed/hyper_storage/tree/main/packages/hyper_storage_shared_preferences
 
 environment:
   sdk: ^3.9.0
 
-# Add regular dependencies here.
 dependencies:
-  # path: ^1.9.0
   flutter:
     sdk: flutter
   shared_preferences: ">=2.5.0 <3.0.0"

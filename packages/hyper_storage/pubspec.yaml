@@ -3,6 +3,7 @@ description: A starting point for Dart libraries or applications.
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage
+homepage: https://github.com/hyper-designed/hyper_storage
 
 environment:
   sdk: ^3.9.0
