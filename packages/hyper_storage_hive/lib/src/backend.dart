@@ -52,19 +52,19 @@ class HiveBackend extends StorageBackend {
   Future<void> setString(String key, String value) => box.put(key, value);
 
   @override
-  Future<String?> getString(String key) => box.get(key);
+  Future<String?> getString(String key) async => box.get(key);
 
   @override
   Future<void> setBool(String key, bool value) => box.put(key, value);
 
   @override
-  Future<bool?> getBool(String key) => box.get(key);
+  Future<bool?> getBool(String key) async => box.get(key);
 
   @override
   Future<void> setDouble(String key, double value) => box.put(key, value);
 
   @override
-  Future<double?> getDouble(String key) => box.get(key);
+  Future<double?> getDouble(String key) async => box.get(key);
 
   @override
   Future<void> setInt(String key, int value) => box.put(key, value);
@@ -98,7 +98,7 @@ class HiveBackend extends StorageBackend {
 
   @override
   Future<void> close() async {
-    await box.close();
+    await _box?.close();
     _box = null;
   }
 }

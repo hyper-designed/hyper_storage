@@ -101,7 +101,7 @@ class LazyHiveBackend extends StorageBackend {
 
   @override
   Future<void> close() async {
-    await box.close();
+    await _box?.close();
     _box = null;
   }
 }
