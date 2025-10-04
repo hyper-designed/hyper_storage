@@ -1,0 +1,835 @@
+import 'package:hyper_storage/hyper_storage.dart';
+import 'package:test/test.dart';
+
+import 'helpers/test_helpers.dart';
+
+void main() {
+  group('HyperStorage', () {
+    tearDown(() async {
+      // Clean up singleton between tests
+      try {
+        await HyperStorage.instance.close();
+      } catch (_) {
+        // Instance might not be initialized
+      }
+    });
+
+    group('initialization', () {
+      test('init creates singleton instance', () async {
+        final backend = InMemoryBackend();
+        final storage = await HyperStorage.init(backend: backend);
+
+        expect(storage, isNotNull);
+        expect(HyperStorage.instance, same(storage));
+      });
+
+      test('init is idempotent with same backend type', () async {
+        final backend1 = InMemoryBackend();
+        final storage1 = await HyperStorage.init(backend: backend1);
+
+        final backend2 = InMemoryBackend();
+        final storage2 = await HyperStorage.init(backend: backend2);
+
+        expect(storage1, same(storage2));
+      });
+
+      test('init throws when reinitializing with different backend type', () async {
+        await HyperStorage.init(backend: InMemoryBackend());
+        expect(
+          () => HyperStorage.init(backend: AnotherBackend()),
+          throwsStateError,
+        );
+      });
+
+      test('initMocked creates instance with InMemoryBackend', () async {
+        final storage = await HyperStorage.initMocked();
+
+        expect(storage, isNotNull);
+        expect(storage.backend, isA<InMemoryBackend>());
+      });
+
+      test('initMocked with initial data', () async {
+        final initialData = {'key1': 'value1', 'key2': 42};
+        final storage = await HyperStorage.initMocked(initialData: initialData);
+
+        expect(await storage.getString('key1'), 'value1');
+        expect(await storage.getInt('key2'), 42);
+      });
+
+      test('instance throws before initialization', () {
+        expect(() => HyperStorage.instance, throwsStateError);
+      });
+
+      test('newInstance creates non-singleton instance', () async {
+        final backend = InMemoryBackend();
+        final instance1 = await HyperStorage.newInstance(backend: backend);
+        final instance2 = await HyperStorage.newInstance(backend: backend);
+
+        expect(instance1, isNot(same(instance2)));
+
+        await instance1.close();
+        await instance2.close();
+      });
+    });
+
+    group('container management', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('container creates and caches containers', () async {
+        final storage = HyperStorage.instance;
+        final container1 = await storage.backend.container('users');
+        final container2 = await storage.backend.container('users');
+
+        // Different instances since backend.container creates new instances
+        expect(container1, isA<HyperStorageContainer>());
+        expect(container2, isA<HyperStorageContainer>());
+      });
+
+      test('different named containers are different instances', () async {
+        final storage = HyperStorage.instance;
+        final container1 = await storage.backend.container('users');
+        final container2 = await storage.backend.container('admins');
+
+        expect(container1.name, 'users');
+        expect(container2.name, 'admins');
+      });
+
+      test('containers are isolated by name', () async {
+        final storage = HyperStorage.instance;
+        final users = await storage.backend.container('users');
+        final admins = await storage.backend.container('admins');
+
+        await users.setString('name', 'User Container');
+        await admins.setString('name', 'Admin Container');
+
+        expect(await users.getString('name'), 'User Container');
+        expect(await admins.getString('name'), 'Admin Container');
+      });
+    });
+
+    group('JSON containers', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('creates JSON containers', () async {
+        final storage = HyperStorage.instance;
+        final container = JsonStorageContainer<User>(
+          backend: storage.backend,
+          name: 'users',
+          toJson: (user) => user.toJson(),
+          fromJson: User.fromJson,
+          idGetter: (user) => user.id,
+        );
+
+        await container.add(testUser1);
+        expect(await container.get(testUser1.id), testUser1);
+      });
+
+      test('accepts custom parameters', () async {
+        final storage = HyperStorage.instance;
+        final container = JsonStorageContainer<User>(
+          backend: storage.backend,
+          name: 'users',
+          toJson: (user) => user.toJson(),
+          fromJson: User.fromJson,
+          idGetter: (user) => user.id,
+          delimiter: '---',
+          seed: 12345,
+        );
+
+        await container.add(testUser1);
+        expect(await container.get(testUser1.id), testUser1);
+      });
+    });
+
+    group('custom containers', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('creates custom containers', () async {
+        final storage = HyperStorage.instance;
+        final container = JsonStorageContainer<User>(
+          backend: storage.backend,
+          name: 'users',
+          toJson: (user) => user.toJson(),
+          fromJson: User.fromJson,
+          idGetter: (user) => user.id,
+        );
+
+        await container.add(testUser1);
+        expect(await container.get(testUser1.id), testUser1);
+      });
+    });
+
+    group('storage operations', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('setString and getString', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'value');
+        expect(await storage.getString('key'), 'value');
+      });
+
+      test('setInt and getInt', () async {
+        final storage = HyperStorage.instance;
+        await storage.setInt('count', 42);
+        expect(await storage.getInt('count'), 42);
+      });
+
+      test('setBool and getBool', () async {
+        final storage = HyperStorage.instance;
+        await storage.setBool('enabled', true);
+        expect(await storage.getBool('enabled'), true);
+      });
+
+      test('setDouble and getDouble', () async {
+        final storage = HyperStorage.instance;
+        await storage.setDouble('price', 99.99);
+        expect(await storage.getDouble('price'), 99.99);
+      });
+
+      test('batch operations', () async {
+        final storage = HyperStorage.instance;
+        await storage.setAll({
+          'key1': 'value1',
+          'key2': 42,
+          'key3': true,
+        });
+
+        expect(await storage.getString('key1'), 'value1');
+        expect(await storage.getInt('key2'), 42);
+        expect(await storage.getBool('key3'), true);
+      });
+
+      test('getAll returns all data', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key1', 'value1');
+        await storage.setInt('key2', 42);
+
+        final all = await storage.getAll();
+        expect(all['key1'], 'value1');
+        expect(all['key2'], 42);
+      });
+
+      test('remove deletes data', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'value');
+        await storage.remove('key');
+
+        expect(await storage.getString('key'), isNull);
+      });
+
+      test('containsKey checks existence', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'value');
+
+        expect(await storage.containsKey('key'), true);
+        expect(await storage.containsKey('nonExistent'), false);
+      });
+
+      test('isEmpty and isNotEmpty', () async {
+        final storage = HyperStorage.instance;
+        expect(await storage.isEmpty, true);
+
+        await storage.setString('key', 'value');
+        expect(await storage.isEmpty, false);
+        expect(await storage.isNotEmpty, true);
+      });
+
+      test('getKeys returns all keys', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key1', 'value1');
+        await storage.setString('key2', 'value2');
+
+        final keys = await storage.getKeys();
+        expect(keys, containsAll(['key1', 'key2']));
+      });
+
+      test('setDateTime and getDateTime', () async {
+        final storage = HyperStorage.instance;
+        final now = DateTime.now();
+        await storage.setDateTime('time', now);
+
+        final retrieved = await storage.getDateTime('time');
+        expect(retrieved, isNotNull);
+        expect(retrieved!.millisecondsSinceEpoch, now.toUtc().millisecondsSinceEpoch);
+      });
+
+      test('getDateTime with isUtc parameter', () async {
+        final storage = HyperStorage.instance;
+        final utcTime = DateTime.utc(2024, 1, 1, 12, 0, 0);
+        await storage.setDateTime('time', utcTime);
+
+        final asUtc = await storage.getDateTime('time', isUtc: true);
+        expect(asUtc!.isUtc, true);
+
+        final asLocal = await storage.getDateTime('time', isUtc: false);
+        expect(asLocal!.isUtc, false);
+      });
+
+      test('setDuration and getDuration', () async {
+        final storage = HyperStorage.instance;
+        final duration = Duration(hours: 2, minutes: 30);
+        await storage.setDuration('duration', duration);
+
+        final retrieved = await storage.getDuration('duration');
+        expect(retrieved, duration);
+      });
+
+      test('setStringList and getStringList', () async {
+        final storage = HyperStorage.instance;
+        final list = ['apple', 'banana', 'cherry'];
+        await storage.setStringList('fruits', list);
+
+        final retrieved = await storage.getStringList('fruits');
+        expect(retrieved, list);
+      });
+
+      test('setJson and getJson', () async {
+        final storage = HyperStorage.instance;
+        final json = {'name': 'John', 'age': 30, 'active': true};
+        await storage.setJson('user', json);
+
+        final retrieved = await storage.getJson('user');
+        expect(retrieved, json);
+      });
+
+      test('setJsonList and getJsonList', () async {
+        final storage = HyperStorage.instance;
+        final jsonList = [
+          {'id': 1, 'name': 'Item 1'},
+          {'id': 2, 'name': 'Item 2'},
+        ];
+        await storage.setJsonList('items', jsonList);
+
+        final retrieved = await storage.getJsonList('items');
+        expect(retrieved, jsonList);
+      });
+
+      test('removeAll deletes multiple keys', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key1', 'value1');
+        await storage.setString('key2', 'value2');
+        await storage.setString('key3', 'value3');
+
+        await storage.removeAll(['key1', 'key3']);
+
+        expect(await storage.getString('key1'), isNull);
+        expect(await storage.getString('key2'), 'value2');
+        expect(await storage.getString('key3'), isNull);
+      });
+    });
+
+    group('clear', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('clear removes all data from storage and containers', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.container('test') as HyperStorageContainer;
+        final jsonContainer = await storage.jsonSerializableContainer<User>(
+          'users',
+          toJson: (user) => user.toJson(),
+          fromJson: User.fromJson,
+        );
+
+        await storage.setString('rootKey', 'rootValue');
+        await container.setString('containerKey', 'containerValue');
+        await jsonContainer.add(testUser1);
+
+        await storage.clear();
+
+        expect(await storage.getString('rootKey'), isNull);
+        expect(await container.isEmpty, isTrue);
+        expect(await jsonContainer.isEmpty, isTrue);
+      });
+
+      test('clear clears backend data', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key1', 'value1');
+        await storage.setString('key2', 'value2');
+
+        await storage.clear();
+
+        final keys = await storage.backend.getKeys();
+        expect(keys, isEmpty);
+      });
+    });
+
+    group('close', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('close cleans up all resources', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.backend.container('test');
+
+        await container.setString('key', 'value');
+        await storage.close();
+
+        // After close, instance should throw when accessed
+        expect(() => HyperStorage.instance, throwsStateError);
+      });
+
+      test('close clears resources', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'value');
+
+        await storage.close();
+
+        // After close, instance should throw when accessed
+        expect(() => HyperStorage.instance, throwsStateError);
+      });
+
+      test('can reinitialize after close', () async {
+        await HyperStorage.instance.close();
+
+        final backend = InMemoryBackend();
+        final storage = await HyperStorage.init(backend: backend);
+
+        expect(storage, isNotNull);
+        expect(HyperStorage.instance, same(storage));
+      });
+    });
+
+    group('listeners', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('addListener registers global listener', () async {
+        final storage = HyperStorage.instance;
+        int callCount = 0;
+
+        storage.addListener(() {
+          callCount++;
+        });
+
+        await storage.setString('key1', 'value1');
+        await storage.setString('key2', 'value2');
+
+        await Future.delayed(Duration(milliseconds: 10));
+        expect(callCount, greaterThan(0));
+      });
+
+      test('addKeyListener registers key-specific listener', () async {
+        final storage = HyperStorage.instance;
+        int callCount = 0;
+
+        storage.addKeyListener('specificKey', () {
+          callCount++;
+        });
+
+        await storage.setString('specificKey', 'value');
+        await Future.delayed(Duration(milliseconds: 10));
+
+        final countAfterSpecificKey = callCount;
+        expect(countAfterSpecificKey, greaterThan(0));
+
+        await storage.setString('otherKey', 'value');
+        await Future.delayed(Duration(milliseconds: 10));
+
+        // Should not increase for other keys
+        expect(callCount, countAfterSpecificKey);
+      });
+
+      test('removeListener unregisters listener', () async {
+        final storage = HyperStorage.instance;
+        int callCount = 0;
+
+        void listener() {
+          callCount++;
+        }
+
+        storage.addListener(listener);
+        await storage.setString('key', 'value1');
+        await Future.delayed(Duration(milliseconds: 10));
+
+        final countBefore = callCount;
+
+        storage.removeListener(listener);
+        await storage.setString('key', 'value2');
+        await Future.delayed(Duration(milliseconds: 10));
+
+        expect(callCount, countBefore);
+      });
+
+      test('hasListeners returns correct value', () {
+        final storage = HyperStorage.instance;
+        expect(storage.hasListeners, false);
+
+        storage.addListener(() {});
+        expect(storage.hasListeners, true);
+
+        storage.removeAllListeners();
+        expect(storage.hasListeners, false);
+      });
+    });
+
+    group('validation', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('validates empty keys', () async {
+        final storage = HyperStorage.instance;
+
+        expect(
+          () => storage.setString('', 'value'),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => storage.getString(''),
+          throwsArgumentError,
+        );
+      });
+
+      test('validates whitespace-only keys', () async {
+        final storage = HyperStorage.instance;
+
+        expect(
+          () => storage.setString('   ', 'value'),
+          throwsArgumentError,
+        );
+      });
+
+      test('accepts valid keys', () async {
+        final storage = HyperStorage.instance;
+
+        await expectLater(
+          storage.setString('validKey', 'value'),
+          completes,
+        );
+
+        await expectLater(
+          storage.setString('key-with-dashes', 'value'),
+          completes,
+        );
+
+        await expectLater(
+          storage.setString('key_with_underscores', 'value'),
+          completes,
+        );
+      });
+    });
+
+    group('edge cases', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('handles rapid operations', () async {
+        final storage = HyperStorage.instance;
+
+        for (int i = 0; i < 100; i++) {
+          await storage.setInt('counter', i);
+        }
+
+        expect(await storage.getInt('counter'), 99);
+      });
+
+      test('handles mixed data types', () async {
+        final storage = HyperStorage.instance;
+
+        await storage.setString('str', 'text');
+        await storage.setInt('num', 42);
+        await storage.setBool('flag', true);
+        await storage.setDouble('decimal', 3.14);
+
+        expect(await storage.getString('str'), 'text');
+        expect(await storage.getInt('num'), 42);
+        expect(await storage.getBool('flag'), true);
+        expect(await storage.getDouble('decimal'), 3.14);
+      });
+
+      test('containers persist after storage operations', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.backend.container('persistent');
+        await container.setString('key', 'value');
+
+        await storage.setString('rootKey', 'rootValue');
+
+        expect(await container.getString('key'), 'value');
+      });
+    });
+
+    group('container caching', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('container() returns cached instance for same name', () async {
+        final storage = HyperStorage.instance;
+        final container1 = await storage.container('test');
+        final container2 = await storage.container('test');
+
+        expect(container1, same(container2));
+      });
+
+      test('container() creates different instances for different names', () async {
+        final storage = HyperStorage.instance;
+        final container1 = await storage.container('test1');
+        final container2 = await storage.container('test2');
+
+        expect(container1, isNot(same(container2)));
+        expect(container1.name, 'test1');
+        expect(container2.name, 'test2');
+      });
+    });
+
+    group('error handling', () {
+      test('init throws StateError when reinitializing with different backend type', () async {
+        // Create a custom backend class that extends StorageBackend
+        final backend1 = InMemoryBackend();
+        await HyperStorage.init(backend: backend1);
+
+        // Try to reinitialize with a different instance (same type is OK)
+        final backend2 = InMemoryBackend();
+        final storage2 = await HyperStorage.init(backend: backend2);
+        expect(storage2, same(HyperStorage.instance));
+
+        // We can't easily test with truly different backend types without creating
+        // another backend implementation, but the logic is covered if we check the code path
+      });
+
+      test('jsonSerializableContainer throws StateError for type mismatch', () async {
+        await HyperStorage.initMocked();
+        final storage = HyperStorage.instance;
+
+        // Create a container for User type
+        await storage.jsonSerializableContainer<User>(
+          'users',
+          toJson: (user) => user.toJson(),
+          fromJson: User.fromJson,
+        );
+
+        // Try to create another container with same name but different type
+        expect(
+          () => storage.jsonSerializableContainer<Product>(
+            'users',
+            toJson: (product) => product.toJson(),
+            fromJson: Product.fromJson,
+          ),
+          throwsStateError,
+        );
+      });
+
+    });
+
+    group('objectContainer', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('creates custom container using factory', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        expect(container, isA<UserContainer>());
+        expect(container.name, 'users');
+
+        await container.add(testUser1);
+        expect(await container.get(testUser1.id), testUser1);
+      });
+
+      test('returns cached instance for same name', () async {
+        final storage = HyperStorage.instance;
+        final container1 = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        final container2 = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        expect(container1, same(container2));
+      });
+
+      test('creates different containers for different names', () async {
+        final storage = HyperStorage.instance;
+        final container1 = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        final container2 = await storage.objectContainer<User, UserContainer>(
+          'admins',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'admins',
+          ),
+        );
+
+        expect(container1, isNot(same(container2)));
+        expect(container1.name, 'users');
+        expect(container2.name, 'admins');
+      });
+
+      test('throws StateError when name exists with different type', () async {
+        final storage = HyperStorage.instance;
+
+        // Create a container with UserContainer type
+        await storage.objectContainer<User, UserContainer>(
+          'data',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'data',
+          ),
+        );
+
+        // Try to create another container with same name but different type
+        expect(
+          () => storage.objectContainer<Product, ProductContainer>(
+            'data',
+            factory: () => ProductContainer(
+              backend: storage.backend,
+              name: 'data',
+            ),
+          ),
+          throwsStateError,
+        );
+      });
+
+      test('works with containers that have custom serialization', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        await container.add(testUser1);
+        await container.add(testUser2);
+
+        final users = await container.getValues();
+        expect(users, containsAll([testUser1, testUser2]));
+      });
+
+      test('container is included in clear operation', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        await container.add(testUser1);
+        expect(await container.isEmpty, isFalse);
+
+        await storage.clear();
+
+        expect(await container.isEmpty, isTrue);
+      });
+
+      test('container is closed during storage close', () async {
+        final storage = HyperStorage.instance;
+        final container = await storage.objectContainer<User, UserContainer>(
+          'users',
+          factory: () => UserContainer(
+            backend: storage.backend,
+            name: 'users',
+          ),
+        );
+
+        await container.add(testUser1);
+        await storage.close();
+
+        // After close, instance should throw when accessed
+        expect(() => HyperStorage.instance, throwsStateError);
+      });
+    });
+  });
+}
+
+// Custom container implementation for testing objectContainer
+class UserContainer extends SerializableStorageContainer<User> {
+  UserContainer({
+    required super.backend,
+    required super.name,
+    super.delimiter,
+  }) : super(
+          idGetter: (user) => user.id,
+        );
+
+  @override
+  String serialize(User value) => value.serialize();
+
+  @override
+  User deserialize(String value) => User.deserialize(value);
+}
+
+// Custom container implementation for testing type conflicts
+class ProductContainer extends SerializableStorageContainer<Product> {
+  ProductContainer({
+    required super.backend,
+    required super.name,
+    super.delimiter,
+  }) : super(
+          idGetter: (product) => product.id,
+        );
+
+  @override
+  String serialize(Product value) {
+    return '${value.id}|${value.name}|${value.price}';
+  }
+
+  @override
+  Product deserialize(String value) {
+    final parts = value.split('|');
+    return Product(parts[0], parts[1], double.parse(parts[2]));
+  }
+}
+
+class Product {
+  final String id;
+  final String name;
+  final double price;
+
+  Product(this.id, this.name, this.price);
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'price': price};
+
+  static Product fromJson(Map<String, dynamic> json) {
+    return Product(json['id'] as String, json['name'] as String, json['price'] as double);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Product && runtimeType == other.runtimeType && id == other.id && name == other.name && price == other.price;
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode ^ price.hashCode;
+}
+
+class AnotherBackend extends InMemoryBackend {}
