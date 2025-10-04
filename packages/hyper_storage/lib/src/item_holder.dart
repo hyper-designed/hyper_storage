@@ -103,18 +103,34 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
     void Function()? onDone,
     bool? cancelOnError,
   }) {
+    // Add a listener that will update the stream when the value changes
+    void listener() {
+      if (_streamController.isClosed) return;
+      get().then((value) {
+        if (_streamController.isClosed) return;
+        _streamController.add(value);
+      });
+    }
+
+    addListener(listener);
+
     // load initial value
     get().then((value) {
       if (_streamController.isClosed) return;
       _streamController.add(value);
     });
 
-    return _streamController.stream.listen(
+    final subscription = _streamController.stream.listen(
       onData,
       onError: onError,
       onDone: onDone,
       cancelOnError: cancelOnError,
     );
+
+    // Remove listener when subscription is cancelled
+    subscription.onDone(() => removeListener(listener));
+
+    return subscription;
   }
 
   @override
@@ -207,11 +223,21 @@ final class JsonItemHolder<E extends Object> extends SerializableItemHolder<E> {
 /// type holders. Each item holder is automatically linked to the container's
 /// change notification system.
 mixin ItemHolderMixin on BaseStorage {
-  /// Stub method for encoding keys. Can be overridden by subclasses.
-  String encodeKey(String key) => key;
+  /// Encodes a key for storage. This method should be implemented by the class
+  /// using this mixin if key encoding is required (e.g., for containers).
+  /// The default implementation in BaseStorage returns the key unchanged.
+  @internal
+  @protected
+  @visibleForTesting
+  String encodeKey(String key);
 
-  /// Stub method for validating keys. Can be overridden by subclasses.
-  void validateKey(String key) {}
+  /// Validates a key before use. This method should be implemented by the class
+  /// using this mixin if key validation is required (e.g., for containers).
+  /// The default implementation does nothing.
+  @internal
+  @protected
+  @visibleForTesting
+  void validateKey(String key);
 
   /// Creates an item holder for storing a single serializable object at the specified key.
   ///

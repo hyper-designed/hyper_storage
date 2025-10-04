@@ -70,6 +70,16 @@ abstract class _HyperStorageImpl extends BaseStorage
   }
 
   @override
+  @internal
+  @protected
+  String encodeKey(String key) => key;
+
+  @override
+  @internal
+  @protected
+  void validateKey(String key) => _validateKey(key);
+
+  @override
   Future<bool> containsKey(String key) {
     _validateKey(key);
     return backend.containsKey(key);
@@ -233,14 +243,4 @@ abstract class _HyperStorageImpl extends BaseStorage
     await backend.setStringList(key, value);
     notifyListeners(key);
   }
-
-  @override
-  Future<void> clear() async {
-    await backend.clear();
-    notifyListeners();
-    removeAllListeners();
-  }
-
-  @override
-  Future<void> close() => backend.close();
 }
