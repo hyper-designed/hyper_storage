@@ -13,6 +13,9 @@ import 'dart:math' as math;
 /// - IDs avoid special characters that require escaping
 const String _kPushChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
+int _lastPushTime = 0;
+final List<int> _randomSuffix = List.filled(12, 0);
+
 /// Generates a unique 20-character string identifier with timestamp-based ordering.
 ///
 /// This function creates identifiers with the following properties:
@@ -61,34 +64,44 @@ const String _kPushChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 /// - Very fast: O(1) time complexity
 /// - Memory efficient: Only stores 12 integers of state
 /// - Thread-safe: Uses immutable timestamp and per-call random generation
-///
-/// See also:
-/// - [_toPushIdBase64] for the internal encoding mechanism
-/// - [_kPushChars] for the character set used in encoding
 String generateId([math.Random? random]) {
-  int lastPushTime = 0;
-  final List<int> randomSuffix = List.filled(12, 0);
+  final bool useGlobalState = random == null;
   random ??= math.Random.secure();
 
   final int now = DateTime.now().toUtc().millisecondsSinceEpoch;
   String id = _toPushIdBase64(now, 8);
 
-  if (now != lastPushTime) {
-    // New timestamp: generate fresh random suffix
-    for (int i = 0; i < 12; i += 1) {
-      randomSuffix[i] = random.nextInt(63);
+  final List<int> suffix;
+
+  if (useGlobalState) {
+    // Use global state for monotonic IDs when no custom Random is provided
+    if (now != _lastPushTime) {
+      // New timestamp: generate fresh random suffix
+      for (int i = 0; i < 12; i += 1) {
+        _randomSuffix[i] = random.nextInt(62);
+      }
+    } else {
+      // Same timestamp: increment the previous random suffix to maintain uniqueness
+      // This ensures monotonicity even when generating multiple IDs per millisecond
+      int i;
+      for (i = 11; i >= 0 && _randomSuffix[i] == 61; i--) {
+        _randomSuffix[i] = 0;
+      }
+      if (i >= 0) {
+        _randomSuffix[i] += 1;
+      }
     }
+    suffix = _randomSuffix;
+    _lastPushTime = now;
   } else {
-    // Same timestamp: increment the previous random suffix to maintain uniqueness
-    // This ensures monotonicity even when generating multiple IDs per millisecond
-    int i;
-    for (i = 11; i >= 0 && randomSuffix[i] == 62; i--) {
-      randomSuffix[i] = 0;
+    // Custom Random: always generate fresh random suffix (no global state)
+    suffix = List.filled(12, 0);
+    for (int i = 0; i < 12; i += 1) {
+      suffix[i] = random.nextInt(62);
     }
-    randomSuffix[i] += 1;
   }
-  final String suffixStr = randomSuffix.map((int i) => _kPushChars[i]).join();
-  lastPushTime = now;
+
+  final String suffixStr = suffix.map((int i) => _kPushChars[i]).join();
 
   return '$id$suffixStr';
 }
@@ -128,8 +141,8 @@ String generateId([math.Random? random]) {
 String _toPushIdBase64(int value, int numChars) {
   List<String> chars = List.filled(numChars, '');
   for (int i = numChars - 1; i >= 0; i -= 1) {
-    chars[i] = _kPushChars[value % 63];
-    value = (value / 63).floor();
+    chars[i] = _kPushChars[value % 62];
+    value = (value / 62).floor();
   }
   assert(value == 0, 'Value $value is too large to encode in $numChars characters');
   return chars.join();
