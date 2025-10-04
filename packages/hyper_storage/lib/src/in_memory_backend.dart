@@ -72,11 +72,13 @@ class InMemoryBackend extends StorageBackend {
 
   @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
-    final data = <String, dynamic>{..._data};
-    if (allowList != null && allowList.isNotEmpty) {
+    if (allowList != null) {
+      if (allowList.isEmpty) return {};
+      final data = <String, dynamic>{..._data};
       data.removeWhere((key, value) => !allowList.contains(key));
+      return data;
     }
-    return data;
+    return <String, dynamic>{..._data};
   }
 
   @override
@@ -103,19 +105,33 @@ class InMemoryBackend extends StorageBackend {
   }
 
   @override
-  Future<DateTime?> getDateTime(String key, {bool isUtc = false}) => _data[key];
+  Future<DateTime?> getDateTime(String key, {bool isUtc = false}) async {
+    final dateTime = _data[key] as DateTime?;
+    if (dateTime == null) return null;
+    return isUtc ? dateTime.toUtc() : dateTime.toLocal();
+  }
 
   @override
-  Future<Duration?> getDuration(String key) => _data[key];
+  Future<Duration?> getDuration(String key) async => _data[key] as Duration?;
 
   @override
-  Future<Map<String, dynamic>?> getJson(String key) => _data[key];
+  Future<Map<String, dynamic>?> getJson(String key) async => _data[key] as Map<String, dynamic>?;
 
   @override
-  Future<List<Map<String, dynamic>>?> getJsonList(String key) => _data[key];
+  Future<List<Map<String, dynamic>>?> getJsonList(String key) async {
+    final value = _data[key];
+    if (value == null) return null;
+    if (value is! List) return null;
+    return List<Map<String, dynamic>>.from(value);
+  }
 
   @override
-  Future<List<String>?> getStringList(String key) => _data[key];
+  Future<List<String>?> getStringList(String key) async {
+    final value = _data[key];
+    if (value == null) return null;
+    if (value is! List) return null;
+    return List<String>.from(value);
+  }
 
   @override
   Future<bool> get isEmpty => Future.value(_data.isEmpty);
