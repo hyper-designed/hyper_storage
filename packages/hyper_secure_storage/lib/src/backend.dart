@@ -56,6 +56,7 @@ class SecureStorageBackend extends StorageBackend {
   @override
   Future<int?> getInt(String key) async => int.tryParse(await storage.read(key: key) ?? '');
 
+  /// This returns empty map if allowList is empty.
   @override
   Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
     final Map<String, String> all = await storage.readAll();
@@ -80,8 +81,11 @@ class SecureStorageBackend extends StorageBackend {
   /// 1. [bool] if the value is "true" or "false" (case-insensitive)
   /// 2. [int] if the value is a valid integer
   /// 3. [double] if the value is a valid decimal number
-  /// 4. [Map] or [List] if the value is valid JSON
   /// 5. [String] as fallback for all other cases
+  ///
+  /// CAUTION: This method does not attempt to parse complex types like JSON
+  /// or DateTime to avoid ambiguity and potential data loss. It focuses on
+  /// primitive types only.
   ///
   /// This is an internal utility method used by [getAll] for automatic type
   /// inference.

@@ -90,10 +90,10 @@ abstract class _HyperStorageImpl extends BaseStorage
   }
 
   @override
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) {
+  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
     _validateKeys(allowList);
-    if (allowList == null || allowList.isEmpty) return Future.value(<String, dynamic>{});
-    return backend.getAll(allowList.toSet());
+    if (allowList != null && allowList.isEmpty) return Future.value(<String, dynamic>{});
+    return backend.getAll(allowList?.toSet() ?? await getKeys());
   }
 
   @override

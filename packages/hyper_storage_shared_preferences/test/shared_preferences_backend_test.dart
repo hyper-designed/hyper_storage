@@ -216,15 +216,12 @@ void main() {
         expect(data.containsKey('key4'), false);
       });
 
-      test('getAll with empty allowList returns all data', () async {
+      test('getAll with empty allowList returns no data', () async {
         await backend.setString('key1', 'value1');
         await backend.setInt('key2', 42);
 
         final data = await backend.getAll({});
-        expect(data, {
-          'key1': 'value1',
-          'key2': 42,
-        });
+        expect(data, isEmpty);
       });
 
       test('getAll with non-existent keys in allowList', () async {

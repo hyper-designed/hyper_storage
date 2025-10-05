@@ -75,14 +75,10 @@ class InMemoryBackend extends StorageBackend {
   Future<void> setAll(Map<String, dynamic> values) async => _data.addAll(values);
 
   @override
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
-    if (allowList != null) {
-      if (allowList.isEmpty) return {};
-      final data = <String, dynamic>{..._data};
-      data.removeWhere((key, value) => !allowList.contains(key));
-      return data;
-    }
-    return <String, dynamic>{..._data};
+  Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
+    if (allowList.isEmpty) return {};
+    final data = <String, dynamic>{..._data};
+    return data..removeWhere((key, value) => !allowList.contains(key));
   }
 
   @override

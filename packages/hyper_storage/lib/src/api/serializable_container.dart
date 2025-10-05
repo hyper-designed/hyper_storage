@@ -497,9 +497,9 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   @override
   Future<Map<String, E>> getAll([Iterable<String>? allowList]) async {
     validateKeys(allowList);
-    final keys = allowList?.map(encodeKey) ?? await getEncodedKeys();
+    final keys = allowList?.map(encodeKey).toSet() ?? await getEncodedKeys();
     if (keys.isEmpty) return {};
-    final Map<String, dynamic> allData = await backend.getAll(keys.toSet());
+    final Map<String, dynamic> allData = await backend.getAll(keys);
     return <String, E>{
       for (final MapEntry(:key, :value) in allData.entries) decodeKey(key): deserialize(value.toString()),
     };

@@ -205,8 +205,8 @@ void main() {
         await backend.setString('key1', 'value1');
         await backend.setInt('key2', 42);
 
-        final all = await backend.getAll();
-        expect(all, {'key1': 'value1', 'key2': 42});
+        final all = await backend.getAll({});
+        expect(all, isEmpty);
       });
 
       test('getAll filters by allowList', () async {
@@ -214,13 +214,13 @@ void main() {
         await backend.setString('key2', 'value2');
         await backend.setString('key3', 'value3');
 
-        final filtered = await backend.getAll(['key1', 'key3']);
+        final filtered = await backend.getAll({'key1', 'key3'});
         expect(filtered, {'key1': 'value1', 'key3': 'value3'});
       });
 
       test('getAll with empty allowList returns empty map', () async {
         await backend.setString('key1', 'value1');
-        final filtered = await backend.getAll([]);
+        final filtered = await backend.getAll({});
         expect(filtered, isEmpty);
       });
     });

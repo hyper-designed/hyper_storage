@@ -218,15 +218,12 @@ void main() {
         expect(data.containsKey('key4'), false);
       });
 
-      test('getAll with empty allowList returns all data', () async {
+      test('getAll with empty allowList returns no data', () async {
         await backend.setString('key1', 'value1');
         await backend.setInt('key2', 42);
 
         final data = await backend.getAll({});
-        expect(data, {
-          'key1': 'value1',
-          'key2': 42,
-        });
+        expect(data, isEmpty);
       });
 
       test('getAll with non-existent keys in allowList', () async {
@@ -234,15 +231,6 @@ void main() {
 
         final data = await backend.getAll({'key1', 'nonExistent'});
         expect(data, {'key1': 'value1'});
-      });
-
-      test('getAll parses JSON values correctly', () async {
-        await backend.setJson('json', {'name': 'test', 'value': 42});
-        await backend.setStringList('list', ['a', 'b', 'c']);
-
-        final data = await backend.getAll(await backend.getKeys());
-        expect(data['json'], {'name': 'test', 'value': 42});
-        expect(data['list'], ['a', 'b', 'c']);
       });
     });
 
@@ -416,7 +404,7 @@ void main() {
       test('handles JSON arrays in getAll', () async {
         await backend.setString('array', '[1,2,3]');
         final data = await backend.getAll(await backend.getKeys());
-        expect(data['array'], [1, 2, 3]);
+        expect(data['array'], '[1,2,3]');
       });
 
       test('handles complex nested JSON', () async {
