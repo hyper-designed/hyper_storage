@@ -27,20 +27,20 @@ Then, run `flutter pub get` or `dart pub get`.
 
 ## Usage
 
-Initialize the storage. The default backend is `InMemoryBackend`.
+Initialize the storage with a backend. The `InMemoryBackend` is included by default for temporary storage.
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
 
 void main() async {
-  // Initialize the storage
-  final storage = await HyperStorage.init();
+  // Initialize the storage with InMemoryBackend
+  final storage = await HyperStorage.init(backend: InMemoryBackend());
 
   // Set a value
-  await storage.set('name', 'Hyper Storage');
+  await storage.setString('name', 'Hyper Storage');
 
   // Get a value
-  final name = await storage.get('name');
+  final name = await storage.getString('name');
   print(name); // Output: Hyper Storage
 
   // Close the storage

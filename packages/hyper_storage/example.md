@@ -23,7 +23,7 @@ You can initialize `hyper_storage` with a specific backend. If no backend is pro
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
 
-final storage = await HyperStorage.init();
+final storage = await HyperStorage.init(backend: InMemoryBackend());
 ```
 
 ### Using Other Backends
