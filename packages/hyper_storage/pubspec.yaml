@@ -1,5 +1,6 @@
 name: hyper_storage
 description: A simple and flexible key-value storage for Dart and Flutter applications, supporting multiple backends.
+
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage
@@ -8,7 +9,6 @@ homepage: https://github.com/hyper-designed/hyper_storage
 environment:
   sdk: ^3.9.0
 
-# Add regular dependencies here.
 dependencies:
   meta: ">=1.16.0 <2.0.0"
 
@@ -16,5 +16,12 @@ dev_dependencies:
   lints: ^6.0.0
   coverage: ^1.15.0
   test: ^1.26.2
+
+topics:
+  - local
+  - storage
+  - key-value
+  - shared-preferences
+  - hive
 
 resolution: workspace

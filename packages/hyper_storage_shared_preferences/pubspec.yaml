@@ -1,5 +1,6 @@
 name: hyper_storage_shared_preferences
 description: A backend for hyper_storage using shared_preferences for Flutter applications.
+
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage

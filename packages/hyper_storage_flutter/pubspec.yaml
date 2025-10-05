@@ -1,5 +1,6 @@
 name: hyper_storage_flutter
 description: A package that makes it easy to use hyper_storage in Flutter applications.
+
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage

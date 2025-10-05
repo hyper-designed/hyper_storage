@@ -1,5 +1,6 @@
 name: hyper_storage_hive
 description: A backend for hyper_storage that uses hive_ce for local data storage.
+
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage
@@ -8,9 +9,7 @@ homepage: https://github.com/hyper-designed/hyper_storage/tree/main/packages/hyp
 environment:
   sdk: ^3.9.0
 
-# Add regular dependencies here.
 dependencies:
-  # path: ^1.9.0
   hive_ce: ">=2.13.0 <3.0.0"
   hyper_storage: ^0.1.0
 
