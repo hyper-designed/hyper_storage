@@ -1,3 +1,7 @@
+// Copyright © 2025 Hyperdesigned. All rights reserved.
+// Use of this source code is governed by a BSD license that can be
+// found in the LICENSE file.
+
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
