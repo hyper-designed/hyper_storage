@@ -229,6 +229,7 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   Future<void> close() async {
     removeAllListeners();
     await backend.close();
+    await super.close();
   }
 
   @override
