@@ -51,9 +51,8 @@ class SharedPreferencesBackend extends StorageBackend {
   Future<int?> getInt(String key) => prefs.getInt(key);
 
   @override
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
-    final allKeys = await getKeys();
-    if (allowList == null || allowList.isEmpty) allowList = allKeys;
+  Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
+    if (allowList.isEmpty) return {};
     final data = await prefs.getAll(allowList: allowList.toSet());
     return data.map((key, value) => MapEntry(key, value));
   }

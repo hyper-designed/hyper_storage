@@ -78,14 +78,12 @@ class LazyHiveBackend extends StorageBackend {
   Future<int?> getInt(String key) async => await box.get(key);
 
   @override
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
+  Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
     final data = <String, dynamic>{
       for (final key in box.keys) key.toString(): await box.get(key),
     };
-    if (allowList != null && allowList.isNotEmpty) {
-      data.removeWhere((key, value) => !allowList.contains(key));
-    }
-    return data;
+    if (allowList.isEmpty) return {};
+    return data..removeWhere((key, value) => !allowList.contains(key));
   }
 
   @override

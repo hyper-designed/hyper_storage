@@ -77,12 +77,10 @@ class HiveBackend extends StorageBackend {
   Future<int?> getInt(String key) async => await box.get(key);
 
   @override
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
+  Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
     final data = <String, dynamic>{...box.toMap()};
-    if (allowList != null && allowList.isNotEmpty) {
-      data.removeWhere((key, value) => !allowList.contains(key));
-    }
-    return data;
+    if (allowList.isEmpty) return {};
+    return data..removeWhere((key, value) => !allowList.contains(key));
   }
 
   @override

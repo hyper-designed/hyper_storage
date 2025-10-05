@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:hive_ce/hive.dart';
-import 'package:path/path.dart' as path;
 
 /// Sets up Hive with a temporary directory for testing.
 Future<Directory> setupHive() async {

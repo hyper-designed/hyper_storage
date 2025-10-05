@@ -495,7 +495,7 @@ abstract interface class StorageOperationsApi {
   ///
   /// Throws:
   /// * [ArgumentError] if any key in the allow list is invalid.
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]);
+  Future<Map<String, dynamic>> getAll(Set<String> allowList);
 
   /// Saves multiple key-value pairs from a [Map] in a single operation.
   ///

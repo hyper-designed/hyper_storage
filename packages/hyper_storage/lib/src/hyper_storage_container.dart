@@ -118,7 +118,9 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   @override
   Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
     validateKeys(allowList);
-    final map = await backend.getAll(allowList?.map(encodeKey) ?? await getEncodedKeys());
+    allowList ??= await getEncodedKeys();
+    if (allowList.isEmpty) return {};
+    final map = await backend.getAll(allowList.map(encodeKey).toSet());
     return {for (final entry in map.entries) decodeKey(entry.key): entry.value};
   }
 

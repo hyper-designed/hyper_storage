@@ -5,8 +5,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hyper_storage/hyper_storage.dart';
 
-import 'utils.dart';
-
 /// A secure storage backend implementation that leverages platform-specific
 /// secure storage mechanisms to protect sensitive data.
 class SecureStorageBackend extends StorageBackend {
@@ -59,14 +57,12 @@ class SecureStorageBackend extends StorageBackend {
   Future<int?> getInt(String key) async => int.tryParse(await storage.read(key: key) ?? '');
 
   @override
-  Future<Map<String, dynamic>> getAll([Iterable<String>? allowList]) async {
-    // decoded keys associated with this container.
+  Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
     final Map<String, String> all = await storage.readAll();
     final Map<String, dynamic> data = {};
+    if (allowList.isEmpty) return {};
     for (final MapEntry(:key, :value) in all.entries) {
-      if (allowList != null && allowList.isNotEmpty && !allowList.contains(key)) {
-        continue;
-      }
+      if (!allowList.contains(key)) continue;
       data[key] = _parseValue(value);
     }
     return data;
@@ -89,8 +85,7 @@ class SecureStorageBackend extends StorageBackend {
   ///
   /// This is an internal utility method used by [getAll] for automatic type
   /// inference.
-  Object? _parseValue(String value) =>
-      bool.tryParse(value) ?? int.tryParse(value) ?? double.tryParse(value) ?? tryJsonDecode(value) ?? value;
+  Object? _parseValue(String value) => bool.tryParse(value) ?? int.tryParse(value) ?? double.tryParse(value) ?? value;
 
   @override
   Future<Set<String>> getKeys() async {
