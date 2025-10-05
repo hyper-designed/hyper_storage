@@ -50,7 +50,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// [container] method. Containers are cached to ensure the same instance
   /// is returned for repeated requests with the same name, maintaining
   /// consistency of listeners and state.
-  final Map<String, StorageContainer> _containers = {};
+  final Map<String, HyperStorageContainer> _containers = {};
 
   /// Cache of serializable object containers indexed by name.
   ///
@@ -194,7 +194,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// - [jsonSerializableContainer] for storing custom objects with JSON
   /// - [objectContainer] for custom serialization logic
   /// - [StorageContainer] for available operations
-  Future<StorageContainer> container(String name) async {
+  Future<HyperStorageContainer> container(String name) async {
     if (_containers.containsKey(name)) return _containers[name]!;
     final container = await backend.container(name);
     return _containers[name] = container;
