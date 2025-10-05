@@ -553,6 +553,144 @@ void main() {
         expect(customHolder.key, 'test___user');
       });
     });
+
+    group('ItemHolder caching', () {
+      test('itemHolder returns same instance for same key', () {
+        final holder1 = container.itemHolder<String>('cache-test');
+        final holder2 = container.itemHolder<String>('cache-test');
+        expect(identical(holder1, holder2), true);
+      });
+
+      test('itemHolder throws ArgumentError for type mismatch', () {
+        // Create a holder with String type
+        container.itemHolder<String>('type-mismatch');
+
+        // Attempt to create another holder with same key but different type
+        expect(
+          () => container.itemHolder<int>('type-mismatch'),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('An ItemHolder with key "type-mismatch" already exists with a different type'),
+            ),
+          ),
+        );
+      });
+
+      test('jsonItemHolder returns same instance for same key', () {
+        final holder1 = container.jsonItemHolder<User>(
+          'user-cache',
+          fromJson: User.fromJson,
+          toJson: (user) => user.toJson(),
+        );
+        final holder2 = container.jsonItemHolder<User>(
+          'user-cache',
+          fromJson: User.fromJson,
+          toJson: (user) => user.toJson(),
+        );
+        expect(identical(holder1, holder2), true);
+      });
+
+      test('jsonItemHolder throws ArgumentError for type mismatch', () {
+        // Create a JsonItemHolder with User type
+        container.jsonItemHolder<User>(
+          'json-mismatch',
+          fromJson: User.fromJson,
+          toJson: (user) => user.toJson(),
+        );
+
+        // Attempt to create another JsonItemHolder with same key but different type
+        expect(
+          () => container.jsonItemHolder<Map<String, dynamic>>(
+            'json-mismatch',
+            fromJson: (json) => json,
+            toJson: (data) => data,
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('An ItemHolder with key "json-mismatch" already exists with a different type'),
+            ),
+          ),
+        );
+      });
+
+      test('serializableItemHolder returns same instance for same key', () {
+        final holder1 = container.serializableItemHolder<User>(
+          'serializable-cache',
+          serialize: (user) => user.serialize(),
+          deserialize: User.deserialize,
+        );
+        final holder2 = container.serializableItemHolder<User>(
+          'serializable-cache',
+          serialize: (user) => user.serialize(),
+          deserialize: User.deserialize,
+        );
+        expect(identical(holder1, holder2), true);
+      });
+
+      test('serializableItemHolder throws ArgumentError for type mismatch', () {
+        // Create a SerializableItemHolder with User type
+        container.serializableItemHolder<User>(
+          'serializable-mismatch',
+          serialize: (user) => user.serialize(),
+          deserialize: User.deserialize,
+        );
+
+        // Attempt to create another SerializableItemHolder with same key but different type
+        expect(
+          () => container.serializableItemHolder<String>(
+            'serializable-mismatch',
+            serialize: (s) => s,
+            deserialize: (s) => s,
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('An ItemHolder with key "serializable-mismatch" already exists with a different type'),
+            ),
+          ),
+        );
+      });
+
+      test('customItemHolder returns same instance for same key', () {
+        final holder1 = container.customItemHolder<CustomUserHolder, User>(
+          'custom-cache',
+          create: (backend, key) => CustomUserHolder(container, backend, key),
+        );
+        final holder2 = container.customItemHolder<CustomUserHolder, User>(
+          'custom-cache',
+          create: (backend, key) => CustomUserHolder(container, backend, key),
+        );
+        expect(identical(holder1, holder2), true);
+      });
+
+      test('customItemHolder throws ArgumentError for type mismatch', () {
+        // Create a CustomItemHolder
+        container.customItemHolder<CustomUserHolder, User>(
+          'custom-mismatch',
+          create: (backend, key) => CustomUserHolder(container, backend, key),
+        );
+
+        // Attempt to create another CustomItemHolder with same key but different holder type
+        expect(
+          () => container.customItemHolder<AnotherCustomHolder, String>(
+            'custom-mismatch',
+            create: (backend, key) => AnotherCustomHolder(container, backend, key),
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('An ItemHolder with key "custom-mismatch" already exists with a different type'),
+            ),
+          ),
+        );
+      });
+    });
   });
 }
 
@@ -573,4 +711,15 @@ class CustomUserHolder extends ItemHolder<User> {
       );
 
   String get key => _encodedKey;
+}
+
+// Another custom ItemHolder for testing type mismatch
+class AnotherCustomHolder extends ItemHolder<String> {
+  AnotherCustomHolder(HyperStorageContainer parent, StorageBackend backend, String encodedKey)
+    : super(
+        parent,
+        encodedKey,
+        getter: (backend, key) => backend.getString(key),
+        setter: (backend, key, value) => backend.setString(key, value),
+      );
 }

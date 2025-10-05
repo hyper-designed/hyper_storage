@@ -378,5 +378,6 @@ class HyperStorage extends _HyperStorageImpl {
     removeAllListeners();
     _instance = null;
     await backend.close();
+    await super.close();
   }
 }

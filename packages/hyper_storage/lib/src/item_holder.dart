@@ -227,6 +227,9 @@ final class JsonItemHolder<E extends Object> extends SerializableItemHolder<E> {
 /// type holders. Each item holder is automatically linked to the container's
 /// change notification system.
 mixin ItemHolderMixin on BaseStorage {
+  /// Internal cache of item holders by their keys.
+  final Map<String, ItemHolder> _holders = {};
+
   /// Encodes a key for storage. This method should be implemented by the class
   /// using this mixin if key encoding is required (e.g., for containers).
   /// The default implementation in BaseStorage returns the key unchanged.
@@ -280,7 +283,19 @@ mixin ItemHolderMixin on BaseStorage {
     required ToJson<E> toJson,
   }) {
     validateKey(key);
-    return JsonItemHolder<E>(this, encodeKey(key), fromJson: fromJson, toJson: toJson);
+    final existing = _holders[key];
+    if (existing != null) {
+      if (existing is JsonItemHolder<E>) {
+        return existing;
+      } else {
+        throw ArgumentError(
+          'An ItemHolder with key "$key" already exists with a different type: ${existing.runtimeType}.',
+        );
+      }
+    }
+    final holder = JsonItemHolder<E>(this, encodeKey(key), fromJson: fromJson, toJson: toJson);
+    _holders[key] = holder;
+    return holder;
   }
 
   /// Creates an item holder for storing a single serializable object at the specified key.
@@ -318,7 +333,19 @@ mixin ItemHolderMixin on BaseStorage {
     required DeserializeCallback<E> deserialize,
   }) {
     validateKey(key);
-    return SerializableItemHolder<E>(this, encodeKey(key), serialize: serialize, deserialize: deserialize);
+    final existing = _holders[key];
+    if (existing != null) {
+      if (existing is SerializableItemHolder<E>) {
+        return existing;
+      } else {
+        throw ArgumentError(
+          'An ItemHolder with key "$key" already exists with a different type: ${existing.runtimeType}.',
+        );
+      }
+    }
+    final holder = SerializableItemHolder<E>(this, encodeKey(key), serialize: serialize, deserialize: deserialize);
+    _holders[key] = holder;
+    return holder;
   }
 
   /// Creates an item holder for storing a single primitive value at the specified key.
@@ -362,7 +389,20 @@ mixin ItemHolderMixin on BaseStorage {
     }
     // Only run generic type validation if custom getter/setter are not provided.
     if (set == null || get == null) _validateGenericType<E>();
-    return ItemHolder<E>(this, encodeKey(key), setter: set, getter: get);
+    final existing = _holders[key];
+    if (existing != null) {
+      if (existing is ItemHolder<E>) {
+        return existing;
+      } else {
+        throw ArgumentError(
+          'An ItemHolder with key "$key" already exists with a different type: ${existing.runtimeType}.',
+        );
+      }
+    }
+
+    final holder = ItemHolder<E>(this, encodeKey(key), setter: set, getter: get);
+    _holders[key] = holder;
+    return holder;
   }
 
   /// Creates a custom item holder using the provided factory function.
@@ -393,7 +433,19 @@ mixin ItemHolderMixin on BaseStorage {
     required H Function(StorageBackend backend, String key) create,
   }) {
     validateKey(key);
-    return create(backend, encodeKey(key));
+    final existing = _holders[key];
+    if (existing != null) {
+      if (existing is H) {
+        return existing;
+      } else {
+        throw ArgumentError(
+          'An ItemHolder with key "$key" already exists with a different type: ${existing.runtimeType}.',
+        );
+      }
+    }
+    final holder = create(backend, encodeKey(key));
+    _holders[key] = holder;
+    return holder;
   }
 
   bool _validateGenericType<E>() {
@@ -409,5 +461,14 @@ mixin ItemHolderMixin on BaseStorage {
       const (List<Map<String, dynamic>>) => true,
       _ => throw UnsupportedError('Type $E is not supported'),
     };
+  }
+
+  /// Disposes all item holders created by this mixin.
+  @mustCallSuper
+  Future<void> close() async {
+    for (final holder in _holders.values) {
+      holder.dispose();
+    }
+    _holders.clear();
   }
 }
