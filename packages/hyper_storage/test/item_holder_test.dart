@@ -715,10 +715,8 @@ class CustomUserHolder extends ItemHolder<User> {
 
 // Another custom ItemHolder for testing type mismatch
 class AnotherCustomHolder extends ItemHolder<String> {
-  AnotherCustomHolder(HyperStorageContainer parent, StorageBackend backend, String encodedKey)
+  AnotherCustomHolder(HyperStorageContainer super.parent, StorageBackend backend, super.key)
     : super(
-        parent,
-        encodedKey,
         getter: (backend, key) => backend.getString(key),
         setter: (backend, key, value) => backend.setString(key, value),
       );

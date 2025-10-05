@@ -227,7 +227,7 @@ void main() {
         await backend.setInt('key2', 42);
         await backend.setBool('key3', true);
 
-        final data = await backend.getAll();
+        final data = await backend.getAll(await backend.getKeys());
         expect(data, {
           'key1': 'value1',
           'key2': 42,
@@ -236,7 +236,7 @@ void main() {
       });
 
       test('getAll returns empty map for empty storage', () async {
-        final data = await backend.getAll();
+        final data = await backend.getAll(await backend.getKeys());
         expect(data, isEmpty);
       });
 
@@ -246,7 +246,7 @@ void main() {
         await backend.setBool('key3', true);
         await backend.setDouble('key4', 3.14);
 
-        final data = await backend.getAll(['key1', 'key3']);
+        final data = await backend.getAll({'key1', 'key3'});
         expect(data, {
           'key1': 'value1',
           'key3': true,
@@ -259,7 +259,7 @@ void main() {
         await backend.setString('key1', 'value1');
         await backend.setInt('key2', 42);
 
-        final data = await backend.getAll([]);
+        final data = await backend.getAll({});
         expect(data, {
           'key1': 'value1',
           'key2': 42,
@@ -269,7 +269,7 @@ void main() {
       test('getAll with non-existent keys in allowList', () async {
         await backend.setString('key1', 'value1');
 
-        final data = await backend.getAll(['key1', 'nonExistent']);
+        final data = await backend.getAll({'key1', 'nonExistent'});
         expect(data, {'key1': 'value1'});
       });
     });
@@ -302,7 +302,7 @@ void main() {
         await backend.setString('key2', 'value2');
         await backend.setString('key3', 'value3');
 
-        await backend.removeAll(['key1', 'key3']);
+        await backend.removeAll({'key1', 'key3'});
 
         expect(await backend.containsKey('key1'), false);
         expect(await backend.containsKey('key2'), true);
@@ -311,14 +311,14 @@ void main() {
 
       test('removeAll handles empty list', () async {
         await backend.setString('key', 'value');
-        await backend.removeAll([]);
+        await backend.removeAll({});
         expect(await backend.getString('key'), 'value');
       });
 
       test('removeAll handles non-existent keys', () async {
         await backend.setString('key1', 'value1');
         await expectLater(
-          backend.removeAll(['key1', 'nonExistent']),
+          backend.removeAll({'key1', 'nonExistent'}),
           completes,
         );
         expect(await backend.containsKey('key1'), false);
