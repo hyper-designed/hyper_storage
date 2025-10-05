@@ -333,7 +333,7 @@ void main() {
 
       test('clear removes all data from storage and containers', () async {
         final storage = HyperStorage.instance;
-        final container = await storage.container('test') as HyperStorageContainer;
+        final container = await storage.container('test');
         final jsonContainer = await storage.jsonSerializableContainer<User>(
           'users',
           toJson: (user) => user.toJson(),
