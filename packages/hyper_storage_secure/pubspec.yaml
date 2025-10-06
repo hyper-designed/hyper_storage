@@ -1,10 +1,10 @@
-name: hyper_secure_storage
+name: hyper_storage_secure
 description: A backend for hyper_storage that uses flutter_secure_storage for secure data storage.
 
 version: 0.1.0
 
 repository: https://github.com/hyper-designed/hyper_storage
-homepage: https://github.com/hyper-designed/hyper_storage/tree/main/packages/hyper_secure_storage
+homepage: https://github.com/hyper-designed/hyper_storage/tree/main/packages/hyper_storage_secure
 
 environment:
   sdk: ^3.9.0

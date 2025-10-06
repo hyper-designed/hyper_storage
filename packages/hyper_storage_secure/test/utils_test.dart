@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hyper_secure_storage/src/utils.dart';
+import 'package:hyper_storage_secure/src/utils.dart';
 
 void main() {
   group('tryJsonDecode', () {

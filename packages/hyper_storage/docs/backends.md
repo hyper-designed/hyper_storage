@@ -77,7 +77,7 @@ void main() async {
 > Hive backend requires initialization of Hive before use. Hyper Storage do not handle Hive initialization for you.
 > You need to initialize Hive in your application before using the Hive backend. For example:
 
-## [Secure Storage Backend](https://pub.dev/packages/hyper_secure_storage):
+## [Secure Storage Backend](https://pub.dev/packages/hyper_storage_secure):
 
 A secure storage backend using [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage), which
 provides a way to store sensitive data securely. This backend is ideal for storing credentials, tokens, and other
@@ -85,7 +85,7 @@ sensitive information.
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_secure_storage/hyper_secure_storage.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure.dart';
 
 void main() async {
   final storage = await HyperStorage.init(backend: SecureStorageBackend());
@@ -99,7 +99,7 @@ behavior.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hyper_storage/hyper_storage.dart';
 
-import 'package:hyper_secure_storage/hyper_secure_storage.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure.dart';
 
 void main() async {
   final secureStorage = FlutterSecureStorage(

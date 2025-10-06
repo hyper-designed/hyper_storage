@@ -1,6 +1,6 @@
-# hyper_secure_storage
+# hyper_storage_secure
 
-[![pub version](https://img.shields.io/pub/v/hyper_secure_storage.svg)](https://pub.dev/packages/hyper_secure_storage)
+[![pub version](https://img.shields.io/pub/v/hyper_storage_secure.svg)](https://pub.dev/packages/hyper_storage_secure)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A backend for `hyper_storage` that uses `flutter_secure_storage` for secure data storage.
@@ -13,14 +13,14 @@ A backend for `hyper_storage` that uses `flutter_secure_storage` for secure data
 
 ## Getting started
 
-Add `hyper_secure_storage` to your `pubspec.yaml` dependencies:
+Add `hyper_storage_secure` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   hyper_storage: ^0.1.0 # Replace with the latest version
-  hyper_secure_storage: ^0.1.0 # Replace with the latest version
+  hyper_storage_secure: ^0.1.0 # Replace with the latest version
 ```
 
 Then, run `flutter pub get`.
@@ -40,7 +40,7 @@ Initialize `hyper_storage` with `SecureStorageBackend`.
 ```dart
 import 'package:flutter/material.dart';
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_secure_storage/hyper_secure_storage_backend.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure_backend.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

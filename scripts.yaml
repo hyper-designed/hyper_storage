@@ -10,7 +10,7 @@ test:
   - cd packages/hyper_storage && dart run test
   - cd packages/hyper_storage_hive && dart run test
   - cd packages/hyper_storage_shared_preference && flutter test
-  - cd packages/hyper_secure_storage && flutter test
+  - cd packages/hyper_storage_secure && flutter test
   - cd packages/hyper_storage_flutter && flutter test
 
 doc:

@@ -1,6 +1,6 @@
 # Hyper Secure Storage Examples
 
-This file provides examples of how to use the `hyper_secure_storage` package with `hyper_storage` in a Flutter application for storing sensitive data.
+This file provides examples of how to use the `hyper_storage_secure` package with `hyper_storage` in a Flutter application for storing sensitive data.
 
 ## Contents
 
@@ -17,7 +17,7 @@ Make sure to call `WidgetsFlutterBinding.ensureInitialized()` before initializin
 ```dart
 import 'package:flutter/material.dart';
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_secure_storage/hyper_secure_storage_backend.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure_backend.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
 
 Once initialized, you can use `hyper_storage` to securely store and retrieve sensitive information like API keys, tokens, and passwords.
 
-**Note:** `hyper_secure_storage` only supports storing `String` values. Other types will be converted to a `String` before being stored. When you retrieve the data, you will get a `String` back.
+**Note:** `hyper_storage_secure` only supports storing `String` values. Other types will be converted to a `String` before being stored. When you retrieve the data, you will get a `String` back.
 
 ### Storing Data
 

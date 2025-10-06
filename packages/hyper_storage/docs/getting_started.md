@@ -25,7 +25,7 @@ dependencies:
   # Add one of the available backends of your choice:
   hyper_storage_hive: ^0.1.0
   hyper_storage_shared_preferences: ^0.1.0
-  hyper_secure_storage: ^0.1.0
+  hyper_storage_secure: ^0.1.0
 ```
 
 Then, run `flutter pub get` or `dart pub get`.
@@ -38,7 +38,7 @@ More backends are available in separate packages:
 
 -   [hyper_storage_hive](https://pub.dev/packages/hyper_storage_hive): Hive backend for persistent storage.
 -   [hyper_storage_shared_preferences](https://pub.dev/packages/hyper_storage_shared_preferences): SharedPreferences backend for persistent storage.
--   [hyper_secure_storage](https://pub.dev/packages/hyper_secure_storage): Secure storage backend for sensitive data.
+-   [hyper_storage_secure](https://pub.dev/packages/hyper_storage_secure): Secure storage backend for sensitive data.
 
 See the [Backends Documentation](backends.md) for more details.
 

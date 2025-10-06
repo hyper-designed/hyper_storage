@@ -38,7 +38,7 @@ Switch between <b><a href="https://pub.dev/packages/shared_preferences">shared_p
 ## Features
 
 - ✅ **Simple API:** Easy to use API for storing and retrieving data.
-- ✅ **Multiple Backends:** Supports different backends like `InMemory`, `hive`, `shared_preferences`, and `secure_storage` (via separate packages).
+- ✅ **Multiple Backends:** Supports different backends like `InMemory`, `hive`, `shared_preferences`, and `flutter_secure_storage` (via separate packages).
 - ✅ **Typed Storage:** Store and retrieve data with type safety.
 - ✅ **JSON Serialization:** Store and retrieve custom objects by providing `toJson` and `fromJson` functions.
 - ✅ **Named Containers:** Organize your data into named containers for better structure.
@@ -62,7 +62,7 @@ dependencies:
   # Add one of the available backends of your choice:
   hyper_storage_hive: ^0.1.0
   hyper_storage_shared_preferences: ^0.1.0
-  hyper_secure_storage: ^0.1.0
+  hyper_storage_secure: ^0.1.0
 ```
 
 Then, run `flutter pub get` or `dart pub get`.
@@ -100,7 +100,7 @@ More backends are available in separate packages:
 
 -   [hyper_storage_hive](https://pub.dev/packages/hyper_storage_hive): Hive backend for persistent storage.
 -   [hyper_storage_shared_preferences](https://pub.dev/packages/hyper_storage_shared_preferences): SharedPreferences backend for persistent storage.
--   [hyper_secure_storage](https://pub.dev/packages/hyper_secure_storage): Secure storage backend for sensitive data.
+-   [hyper_storage_secure](https://pub.dev/packages/hyper_storage_secure): Secure storage backend for sensitive data.
 
 ## Contents
 
