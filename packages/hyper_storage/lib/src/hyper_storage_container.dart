@@ -215,6 +215,24 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   }
 
   @override
+  Future<E?> getEnum<E extends Enum>(String key, List<E> values) async {
+    validateKey(key);
+    final String? enumName = await backend.getString(encodeKey(key));
+    if (enumName == null) return null;
+    for (final enumValue in values) {
+      if (enumValue.name == enumName) return enumValue;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> setEnum<E extends Enum>(String key, E value) async {
+    validateKey(key);
+    await backend.setString(encodeKey(key), value.name);
+    notifyListeners(key);
+  }
+
+  @override
   Future<void> removeAll(Iterable<String> keys) async {
     validateKeys(keys);
     await backend.removeAll(keys.map(encodeKey));

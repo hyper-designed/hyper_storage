@@ -193,6 +193,24 @@ abstract class _HyperStorageImpl extends BaseStorage
   }
 
   @override
+  Future<E?> getEnum<E extends Enum>(String key, List<E> values) async {
+    validateKey(key);
+    final String? enumName = await backend.getString(key);
+    if (enumName == null) return null;
+    for (final enumValue in values) {
+      if (enumValue.name == enumName) return enumValue;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> setEnum<E extends Enum>(String key, E value) async {
+    validateKey(key);
+    await backend.setString(key, value.name);
+    notifyListeners(key);
+  }
+
+  @override
   Future<void> setInt(String key, int value) async {
     validateKey(key);
     await backend.setInt(key, value);

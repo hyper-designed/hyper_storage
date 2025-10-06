@@ -692,6 +692,38 @@ abstract interface class StorageOperationsApi {
   /// * [ArgumentError] if the key invalid.
   Future<void> setDuration(String key, Duration value);
 
+  /// Saves an enum value of type [E] with the given [key].
+  ///
+  /// This method stores an enum value by its name, associating it with the specified key.
+  /// If a value already exists for this key, it will be replaced.
+  ///
+  /// Parameters:
+  /// - [key]: The unique identifier for the enum value.
+  /// - [value]: The enum value to store.
+  ///
+  /// Returns a [Future] that completes when the enum value has been successfully stored.
+  ///
+  /// Throws:
+  /// - [ArgumentError] if the key is invalid.
+  Future<void> setEnum<E extends Enum>(String key, E value);
+
+  /// Retrieves an enum value of type [E] by its [key].
+  ///
+  /// This method fetches an enum value previously stored using [setEnum].
+  /// If no value exists for the given key, or the stored value does not match
+  /// any of the provided enum values, this method returns `null`.
+  ///
+  /// Parameters:
+  /// - [key]: The unique identifier of the enum value to retrieve.
+  /// - [values]: A list of all possible enum values of type [E].
+  ///
+  /// Returns a [Future] that completes with the stored enum value if found,
+  /// or `null` if the key doesn't exist or the value does not match any enum values.
+  ///
+  /// Throws:
+  /// * [ArgumentError] if the key is invalid.
+  Future<E?> getEnum<E extends Enum>(String key, List<E> values);
+
   /// Retrieves a value of type [E] by its [key].
   ///
   /// This is a generic method that attempts to retrieve a value and cast it to
@@ -711,7 +743,7 @@ abstract interface class StorageOperationsApi {
   ///
   /// Throws:
   /// * [ArgumentError] if the key is invalid.
-  Future<E?> get<E extends Object>(String key);
+  Future<E?> get<E extends Object>(String key, {List<Enum>? enumValues});
 
   /// Saves a value of type [E] with the given [key].
   ///
