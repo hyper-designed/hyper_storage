@@ -44,6 +44,7 @@ part 'storage_base.dart';
 /// - [SerializableStorageContainer] for custom object storage
 /// - [StorageBackend] for implementing custom backends
 /// {@category Getting Started}
+/// {@category Introduction}
 class HyperStorage extends _HyperStorageImpl {
   /// Cache of basic storage containers indexed by name.
   ///

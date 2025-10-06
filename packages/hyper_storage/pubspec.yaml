@@ -1,5 +1,5 @@
 name: hyper_storage
-description: A simple and flexible key-value storage for Dart and Flutter applications, supporting multiple backends.
+description: A unified, backend-agnostic key-value storage layer for Flutter.
 
 version: 0.1.0
 

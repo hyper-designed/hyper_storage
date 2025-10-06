@@ -1,8 +1,39 @@
-# hyper_storage
+<h1 align="center">hyper_storage</h1>
 
-[![pub version](https://img.shields.io/pub/v/hyper_storage.svg)](https://pub.dev/packages/hyper_storage)
+<p align="center">
+  <a href="https://pub.dev/packages/hyper_storage">
+    <img src="https://img.shields.io/pub/v/hyper_storage?label=pub.dev&labelColor=333940&logo=dart&color=00589B">
+  </a>
+  <a href="https://github.com/hyper-designed/hyper_storage/actions/workflows/test.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/hyper-designed/hyper_storage/test.yml?branch=main&label=tests&labelColor=333940&logo=github">
+  </a>
+  <a href="https://app.codecov.io/gh/hyper-designed/hyper_storage">
+    <img src="https://img.shields.io/codecov/c/github/hyper-designed/hyper_storage?logo=codecov&logoColor=fff&labelColor=333940">
+  </a>
+  <br/>
+  <a href="https://twitter.com/birjuvachhani">
+    <img src="https://img.shields.io/badge/follow-%40birjuvachhani-1DA1F2?style=flat&label=follow&color=1DA1F2&labelColor=333940&logo=twitter&logoColor=fff">
+  </a>
+    <a href="https://twitter.com/saadardati">
+    <img src="https://img.shields.io/badge/follow-%40saadardati-F0A1F2?style=flat&label=follow&color=0F77dd&labelColor=333940&logo=twitter&logoColor=fff">
+  </a>
+  <a href="https://github.com/hyper-designed/hyper_storage">
+    <img src="https://img.shields.io/github/stars/hyper-designed/hyper_storage?style=flat&label=stars&labelColor=333940&color=8957e5&logo=github">
+  </a>
+</p>
 
-A simple and unified key-value storage for Dart and Flutter applications, supporting multiple backends.
+<p align="center">
+  <a href="#getting-started">Quickstart</a> •
+  <a href="https://pub.dev/documentation/hyper_storage/latest/topics/Introduction-topic.html">Documentation</a> •
+  <a href="https://pub.dev/packages/hyper_storage/example">Example</a>
+</p>
+
+<p align="center">
+    <b>Hyper Storage</b>unifies local <b>key-value</b> storage in Flutter with a single, consistent API. 
+Switch between <b><a href="https://pub.dev/packages/shared_preferences">shared_preferences</a></b>, <b><a href="https://pub.dev/packages/hive_ce">hive_ce</a></b>, <b><a href="https://pub.dev/packages/flutter_secure_storage">flutter_secure_storage</a></b> or any custom backend without changing a single line of app logic.
+</p>
+
+---
 
 ## Features
 
@@ -11,6 +42,8 @@ A simple and unified key-value storage for Dart and Flutter applications, suppor
 - ✅ **Typed Storage:** Store and retrieve data with type safety.
 - ✅ **JSON Serialization:** Store and retrieve custom objects by providing `toJson` and `fromJson` functions.
 - ✅ **Named Containers:** Organize your data into named containers for better structure.
+- ✅ **Custom Serializable Objects Support:** Easily store and retrieve custom objects by providing serialization functions.
+- ✅ **Reactivity:** Listen to changes in the storage and react accordingly.
 - ✅ **Asynchronous:** All operations are asynchronous, making it suitable for Flutter applications.
 - ✅ **Cross-Platform:** Works on mobile, web, and desktop platforms.
 - ✅ **Fully Tested:** Comprehensive test coverage to ensure reliability.

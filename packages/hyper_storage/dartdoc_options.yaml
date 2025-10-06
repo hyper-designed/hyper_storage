@@ -1,0 +1,28 @@
+dartdoc:
+  categories:
+    "Introduction":
+      markdown: docs/introduction.md
+      displayName: Introduction
+    "Getting Started":
+      markdown: docs/getting_started.md
+      displayName: "Getting Started"
+    Backends:
+      markdown: docs/backends.md
+      displayName: Backends
+    "Item Holders":
+      markdown: docs/item_holders.md
+      displayName: "Item Holders"
+    Containers:
+      markdown: docs/containers.md
+      displayName: Containers
+    Reactivity:
+      markdown: docs/reactivity.md
+      displayName: Reactivity
+  categoryOrder:
+    - "Introduction"
+    - "Getting Started"
+    - "Backends"
+    - "Containers"
+    - "Item Holders"
+    - "Reactivity"
+  showUndocumentedCategories: true
