@@ -463,5 +463,297 @@ void main() {
         expect(retrieved, isNotNull);
       });
     });
+
+    group('stream', () {
+      test('stream() emits initial value', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.stream(testUser1.id);
+        final values = <User?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains(testUser1));
+      });
+
+      test('stream() emits null for non-existent key', () async {
+        final stream = userContainer.stream('nonExistent');
+        final values = <User?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains(null));
+      });
+
+      test('stream() updates when value changes', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.stream(testUser1.id);
+        final values = <User?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final updated = User(testUser1.id, 'John Updated', testUser1.email, 31);
+        await userContainer.update(updated);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, contains(testUser1));
+        expect(values, contains(updated));
+      });
+
+      test('stream() handles multiple updates', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.stream(testUser1.id);
+        final values = <User?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final update1 = User(testUser1.id, 'Update 1', testUser1.email, 31);
+        await userContainer.update(update1);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final update2 = User(testUser1.id, 'Update 2', testUser1.email, 32);
+        await userContainer.update(update2);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, containsAll([testUser1, update1, update2]));
+      });
+
+      test('stream() cleans up listener on cancellation', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.stream(testUser1.id);
+        final values = <User?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final initialLength = values.length;
+        await subscription.cancel();
+
+        // Update after cancellation
+        final updated = User(testUser1.id, 'Updated', testUser1.email, 31);
+        await userContainer.update(updated);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        // Values list should not grow after cancellation
+        expect(values.length, initialLength);
+      });
+
+      test('stream() handles concurrent streams for same key', () async {
+        await userContainer.add(testUser1);
+
+        final stream1 = userContainer.stream(testUser1.id);
+        final stream2 = userContainer.stream(testUser1.id);
+
+        final values1 = <User?>[];
+        final values2 = <User?>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final updated = User(testUser1.id, 'Updated', testUser1.email, 31);
+        await userContainer.update(updated);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        expect(values1, contains(testUser1));
+        expect(values1, contains(updated));
+        expect(values2, contains(testUser1));
+        expect(values2, contains(updated));
+      });
+    });
+
+    group('streamAll', () {
+      test('streamAll() emits initial empty list', () async {
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(allValues.first, isEmpty);
+      });
+
+      test('streamAll() emits initial values', () async {
+        await userContainer.addAll([testUser1, testUser2]);
+
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(allValues.first, hasLength(2));
+        expect(allValues.first, containsAll([testUser1, testUser2]));
+      });
+
+      test('streamAll() updates when items are added', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.add(testUser2);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(allValues.length, greaterThanOrEqualTo(2));
+        expect(allValues.first, contains(testUser1));
+        expect(allValues.last, containsAll([testUser1, testUser2]));
+      });
+
+      test('streamAll() updates when items are removed', () async {
+        await userContainer.addAll([testUser1, testUser2]);
+
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.remove(testUser1.id);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(allValues.length, greaterThanOrEqualTo(2));
+        expect(allValues.first, containsAll([testUser1, testUser2]));
+        expect(allValues.last, contains(testUser2));
+        expect(allValues.last, isNot(contains(testUser1)));
+      });
+
+      test('streamAll() updates when items are updated', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final updated = User(testUser1.id, 'Updated', testUser1.email, 31);
+        await userContainer.update(updated);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(allValues.length, greaterThanOrEqualTo(2));
+        expect(allValues.first, contains(testUser1));
+        expect(allValues.last, contains(updated));
+      });
+
+      test('streamAll() handles multiple operations', () async {
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.add(testUser1);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.add(testUser2);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.remove(testUser1.id);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(allValues.length, greaterThanOrEqualTo(4));
+        // Initial empty list
+        expect(allValues.first, isEmpty);
+        // Final state should only have testUser2
+        expect(allValues.last, contains(testUser2));
+        expect(allValues.last, isNot(contains(testUser1)));
+      });
+
+      test('streamAll() cleans up listener on cancellation', () async {
+        await userContainer.add(testUser1);
+
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final lengthBeforeCancel = allValues.length;
+        await subscription.cancel();
+
+        // Add more users after cancellation
+        await userContainer.add(testUser2);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        // allValues list should not grow after cancellation
+        expect(allValues.length, lengthBeforeCancel);
+      });
+
+      test('streamAll() handles concurrent streams', () async {
+        await userContainer.add(testUser1);
+
+        final stream1 = userContainer.streamAll();
+        final stream2 = userContainer.streamAll();
+
+        final values1 = <List<User>>[];
+        final values2 = <List<User>>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.add(testUser2);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        expect(values1.length, greaterThanOrEqualTo(2));
+        expect(values2.length, greaterThanOrEqualTo(2));
+        expect(values1.last, containsAll([testUser1, testUser2]));
+        expect(values2.last, containsAll([testUser1, testUser2]));
+      });
+
+      test('streamAll() handles clear operation', () async {
+        await userContainer.addAll([testUser1, testUser2]);
+
+        final stream = userContainer.streamAll();
+        final allValues = <List<User>>[];
+
+        final subscription = stream.listen(allValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await userContainer.clear();
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(allValues.length, greaterThanOrEqualTo(2));
+        expect(allValues.first, containsAll([testUser1, testUser2]));
+        expect(allValues.last, isEmpty);
+      });
+    });
   });
 }

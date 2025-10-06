@@ -691,6 +691,102 @@ void main() {
         );
       });
     });
+
+    group('closed holder cleanup', () {
+      test('itemHolder creates new instance after dispose', () async {
+        // Create and dispose the first holder
+        final holder1 = container.itemHolder<String>('disposed-key');
+        await holder1.set('value1');
+        holder1.dispose();
+
+        // Create a new holder with the same key
+        final holder2 = container.itemHolder<String>('disposed-key');
+
+        // Verify they are different instances
+        expect(identical(holder1, holder2), false);
+
+        // Verify the new holder works correctly
+        await holder2.set('value2');
+        final value = await holder2.get();
+        expect(value, 'value2');
+      });
+
+      test('jsonItemHolder creates new instance after dispose', () async {
+        // Create and dispose the first holder
+        final holder1 = container.jsonItemHolder<User>(
+          'disposed-user',
+          fromJson: User.fromJson,
+          toJson: (user) => user.toJson(),
+        );
+        await holder1.set(testUser1);
+        holder1.dispose();
+
+        // Create a new holder with the same key
+        final holder2 = container.jsonItemHolder<User>(
+          'disposed-user',
+          fromJson: User.fromJson,
+          toJson: (user) => user.toJson(),
+        );
+
+        // Verify they are different instances
+        expect(identical(holder1, holder2), false);
+
+        // Verify the new holder can set/get values
+        await holder2.set(testUser2);
+        final retrieved = await holder2.get();
+        expect(retrieved, testUser2);
+      });
+
+      test('serializableItemHolder creates new instance after dispose', () async {
+        // Create and dispose the first holder
+        final holder1 = container.serializableItemHolder<User>(
+          'disposed-serializable',
+          serialize: (user) => user.serialize(),
+          deserialize: User.deserialize,
+        );
+        await holder1.set(testUser1);
+        holder1.dispose();
+
+        // Create a new holder with the same key
+        final holder2 = container.serializableItemHolder<User>(
+          'disposed-serializable',
+          serialize: (user) => user.serialize(),
+          deserialize: User.deserialize,
+        );
+
+        // Verify they are different instances
+        expect(identical(holder1, holder2), false);
+
+        // Verify the new holder functions correctly
+        await holder2.set(testUser2);
+        final retrieved = await holder2.get();
+        expect(retrieved, testUser2);
+      });
+
+      test('customItemHolder creates new instance after dispose', () async {
+        // Create and dispose the first holder
+        final holder1 = container.customItemHolder<CustomUserHolder, User>(
+          'disposed-custom',
+          create: (backend, key) => CustomUserHolder(container, backend, key),
+        );
+        await holder1.set(testUser1);
+        holder1.dispose();
+
+        // Create a new holder with the same key
+        final holder2 = container.customItemHolder<CustomUserHolder, User>(
+          'disposed-custom',
+          create: (backend, key) => CustomUserHolder(container, backend, key),
+        );
+
+        // Verify they are different instances
+        expect(identical(holder1, holder2), false);
+
+        // Verify the new holder works as expected
+        await holder2.set(testUser2);
+        final retrieved = await holder2.get();
+        expect(retrieved, testUser2);
+      });
+    });
   });
 }
 

@@ -423,6 +423,6 @@ class HyperStorage extends _HyperStorageImpl {
     addKeyListener(key, retrieveAndAdd);
 
     yield* controller.stream;
-    await controller.close();
+    await controller.close(); // coverage:ignore-line
   }
 }

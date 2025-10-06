@@ -732,7 +732,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
     addKeyListener(key, retrieveAndAdd);
 
     yield* controller.stream;
-    await controller.close();
+    await controller.close(); // coverage:ignore-line
   }
 
   /// Provides a [Stream] of values for all items in the container.
@@ -763,6 +763,6 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
     addListener(retrieveAndAdd);
 
     yield* controller.stream;
-    await controller.close();
+    await controller.close(); // coverage:ignore-line
   }
 }

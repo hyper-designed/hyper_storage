@@ -443,5 +443,208 @@ void main() {
         expect(await container.getJson('key'), map);
       });
     });
+
+    group('stream', () {
+      test('stream() emits initial value', () async {
+        await container.setString('key', 'initial value');
+
+        final stream = container.stream<String>('key');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains('initial value'));
+      });
+
+      test('stream() emits null for non-existent key', () async {
+        final stream = container.stream<String>('nonExistent');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains(null));
+      });
+
+      test('stream() updates when value changes', () async {
+        await container.setString('key', 'initial');
+
+        final stream = container.stream<String>('key');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await container.setString('key', 'updated');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, contains('initial'));
+        expect(values, contains('updated'));
+      });
+
+      test('stream() handles multiple updates', () async {
+        await container.setInt('counter', 0);
+
+        final stream = container.stream<int>('counter');
+        final values = <int?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await container.setInt('counter', 1);
+        await Future.delayed(Duration(milliseconds: 50));
+        await container.setInt('counter', 2);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, containsAll([0, 1, 2]));
+      });
+
+      test('stream() works with different data types', () async {
+        // Test with int
+        await container.setInt('intKey', 42);
+        final intStream = container.stream<int>('intKey');
+        final intValues = <int?>[];
+        final intSub = intStream.listen(intValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await intSub.cancel();
+        expect(intValues, contains(42));
+
+        // Test with bool
+        await container.setBool('boolKey', true);
+        final boolStream = container.stream<bool>('boolKey');
+        final boolValues = <bool?>[];
+        final boolSub = boolStream.listen(boolValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await boolSub.cancel();
+        expect(boolValues, contains(true));
+
+        // Test with double
+        await container.setDouble('doubleKey', 3.14);
+        final doubleStream = container.stream<double>('doubleKey');
+        final doubleValues = <double?>[];
+        final doubleSub = doubleStream.listen(doubleValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await doubleSub.cancel();
+        expect(doubleValues, contains(3.14));
+      });
+
+      test('stream() cleans up listener on cancellation', () async {
+        await container.setString('key', 'value');
+
+        final stream = container.stream<String>('key');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final initialLength = values.length;
+        await subscription.cancel();
+
+        // Update after cancellation
+        await container.setString('key', 'new value');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        // Values list should not grow after cancellation
+        expect(values.length, initialLength);
+      });
+
+      test('stream() handles concurrent streams for same key', () async {
+        await container.setString('key', 'initial');
+
+        final stream1 = container.stream<String>('key');
+        final stream2 = container.stream<String>('key');
+
+        final values1 = <String?>[];
+        final values2 = <String?>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await container.setString('key', 'updated');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        expect(values1, contains('initial'));
+        expect(values1, contains('updated'));
+        expect(values2, contains('initial'));
+        expect(values2, contains('updated'));
+      });
+
+      test('stream() handles concurrent streams for different keys', () async {
+        await container.setString('key1', 'value1');
+        await container.setString('key2', 'value2');
+
+        final stream1 = container.stream<String>('key1');
+        final stream2 = container.stream<String>('key2');
+
+        final values1 = <String?>[];
+        final values2 = <String?>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await container.setString('key1', 'updated1');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        expect(values1, contains('value1'));
+        expect(values1, contains('updated1'));
+        expect(values2, contains('value2'));
+        expect(values2, isNot(contains('updated1')));
+      });
+
+      test('stream() only reacts to container-specific changes', () async {
+        final backend2 = InMemoryBackend();
+        await backend2.init();
+        final container2 = HyperStorageContainer(backend: backend2, name: 'other');
+
+        await container.setString('key', 'container1');
+        await container2.setString('key', 'container2');
+
+        final stream1 = container.stream<String>('key');
+        final stream2 = container2.stream<String>('key');
+
+        final values1 = <String?>[];
+        final values2 = <String?>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        // Update container1
+        await container.setString('key', 'container1-updated');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        // stream1 should have both values from container1
+        expect(values1, contains('container1'));
+        expect(values1, contains('container1-updated'));
+
+        // stream2 should only have the initial value from container2
+        expect(values2, contains('container2'));
+        expect(values2, isNot(contains('container1-updated')));
+
+        await container2.close();
+        await backend2.close();
+      });
+    });
   });
 }

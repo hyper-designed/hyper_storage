@@ -217,6 +217,16 @@ void main() {
         expect(all['key2'], 42);
       });
 
+      test('getAll returns empty map when allowList is empty', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key1', 'value1');
+        await storage.setInt('key2', 42);
+
+        final all = await storage.getAll([]);
+        expect(all, isEmpty);
+        expect(all, isA<Map<String, dynamic>>());
+      });
+
       test('remove deletes data', () async {
         final storage = HyperStorage.instance;
         await storage.setString('key', 'value');
@@ -765,6 +775,250 @@ void main() {
 
         // After close, instance should throw when accessed
         expect(() => HyperStorage.instance, throwsStateError);
+      });
+    });
+
+    group('stream', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('stream() emits initial value', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'initial value');
+
+        final stream = storage.stream<String>('key');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains('initial value'));
+      });
+
+      test('stream() emits null for non-existent key', () async {
+        final storage = HyperStorage.instance;
+
+        final stream = storage.stream<String>('nonExistent');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains(null));
+      });
+
+      test('stream() updates when value changes', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'initial');
+
+        final stream = storage.stream<String>('key');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await storage.setString('key', 'updated');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, contains('initial'));
+        expect(values, contains('updated'));
+      });
+
+      test('stream() handles multiple updates', () async {
+        final storage = HyperStorage.instance;
+        await storage.setInt('counter', 0);
+
+        final stream = storage.stream<int>('counter');
+        final values = <int?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await storage.setInt('counter', 1);
+        await Future.delayed(Duration(milliseconds: 50));
+        await storage.setInt('counter', 2);
+        await Future.delayed(Duration(milliseconds: 50));
+        await storage.setInt('counter', 3);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, containsAll([0, 1, 2, 3]));
+      });
+
+      test('stream() works with different data types', () async {
+        final storage = HyperStorage.instance;
+
+        // Test with int
+        await storage.setInt('intKey', 42);
+        final intStream = storage.stream<int>('intKey');
+        final intValues = <int?>[];
+        final intSub = intStream.listen(intValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await intSub.cancel();
+        expect(intValues, contains(42));
+
+        // Test with bool
+        await storage.setBool('boolKey', true);
+        final boolStream = storage.stream<bool>('boolKey');
+        final boolValues = <bool?>[];
+        final boolSub = boolStream.listen(boolValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await boolSub.cancel();
+        expect(boolValues, contains(true));
+
+        // Test with double
+        await storage.setDouble('doubleKey', 3.14);
+        final doubleStream = storage.stream<double>('doubleKey');
+        final doubleValues = <double?>[];
+        final doubleSub = doubleStream.listen(doubleValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await doubleSub.cancel();
+        expect(doubleValues, contains(3.14));
+      });
+
+      test('stream() works with DateTime', () async {
+        final storage = HyperStorage.instance;
+        final now = DateTime.now();
+        await storage.setDateTime('timeKey', now);
+
+        final stream = storage.stream<DateTime>('timeKey');
+        final values = <DateTime?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values.length, greaterThan(0));
+        expect(values.first?.millisecondsSinceEpoch, now.toUtc().millisecondsSinceEpoch);
+      });
+
+      test('stream() works with Duration', () async {
+        final storage = HyperStorage.instance;
+        final duration = Duration(hours: 2, minutes: 30);
+        await storage.setDuration('durationKey', duration);
+
+        final stream = storage.stream<Duration>('durationKey');
+        final values = <Duration?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values, contains(duration));
+      });
+
+      test('stream() works with List<String>', () async {
+        final storage = HyperStorage.instance;
+        final list = ['a', 'b', 'c'];
+        await storage.setStringList('listKey', list);
+
+        final stream = storage.stream<List<String>>('listKey');
+        final values = <List<String>?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values.length, greaterThan(0));
+        expect(values.first, list);
+      });
+
+      test('stream() works with JSON', () async {
+        final storage = HyperStorage.instance;
+        final json = {'name': 'John', 'age': 30};
+        await storage.setJson('jsonKey', json);
+
+        final stream = storage.stream<Map<String, dynamic>>('jsonKey');
+        final values = <Map<String, dynamic>?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(values.length, greaterThan(0));
+        expect(values.first, json);
+      });
+
+      test('stream() cleans up listener on cancellation', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'value');
+
+        final stream = storage.stream<String>('key');
+        final values = <String?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        final initialLength = values.length;
+        await subscription.cancel();
+
+        // Update after cancellation
+        await storage.setString('key', 'new value');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        // Values list should not grow after cancellation
+        expect(values.length, initialLength);
+      });
+
+      test('stream() handles concurrent streams for same key', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key', 'initial');
+
+        final stream1 = storage.stream<String>('key');
+        final stream2 = storage.stream<String>('key');
+
+        final values1 = <String?>[];
+        final values2 = <String?>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await storage.setString('key', 'updated');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        expect(values1, contains('initial'));
+        expect(values1, contains('updated'));
+        expect(values2, contains('initial'));
+        expect(values2, contains('updated'));
+      });
+
+      test('stream() handles concurrent streams for different keys', () async {
+        final storage = HyperStorage.instance;
+        await storage.setString('key1', 'value1');
+        await storage.setString('key2', 'value2');
+
+        final stream1 = storage.stream<String>('key1');
+        final stream2 = storage.stream<String>('key2');
+
+        final values1 = <String?>[];
+        final values2 = <String?>[];
+
+        final sub1 = stream1.listen(values1.add);
+        final sub2 = stream2.listen(values2.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await storage.setString('key1', 'updated1');
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub1.cancel();
+        await sub2.cancel();
+
+        expect(values1, contains('value1'));
+        expect(values1, contains('updated1'));
+        expect(values2, contains('value2'));
+        expect(values2, isNot(contains('updated1')));
       });
     });
   });

@@ -248,9 +248,26 @@ mixin ItemHolderMixin on BaseStorage {
   @visibleForTesting
   String encodeKey(String key);
 
-  /// Validates a key before use. This method should be implemented by the class
-  /// using this mixin if key validation is required (e.g., for containers).
-  /// The default implementation does nothing.
+  /// Validates that a single key is acceptable for storage operations.
+  ///
+  /// This method checks that the key meets basic requirements for storage:
+  /// - Must not be empty
+  /// - Must not consist only of whitespace characters
+  ///
+  /// Parameters:
+  ///   * [key] - The key to validate.
+  ///
+  /// Throws:
+  ///   * [ArgumentError] if the key is empty.
+  ///   * [ArgumentError] if the key contains only whitespace.
+  ///
+  /// Example:
+  /// ```dart
+  /// validateKey('validKey');      // OK
+  /// validateKey('');              // Throws ArgumentError: Key cannot be empty
+  /// validateKey('   ');           // Throws ArgumentError: Key cannot be only whitespace
+  /// validateKey(' key ');         // OK - has non-whitespace content
+  /// ```
   @internal
   @protected
   @visibleForTesting
