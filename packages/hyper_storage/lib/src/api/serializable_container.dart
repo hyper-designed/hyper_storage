@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:meta/meta.dart';
@@ -157,9 +158,6 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   /// format is up to the implementation (JSON, XML, binary encoding, etc.),
   /// but it must be reversible by the [deserialize] method.
   ///
-  /// The [@protected] annotation indicates this method is for internal use
-  /// by the container and shouldn't be called directly by external code.
-  ///
   /// Parameters:
   ///   * [value] - The object to serialize.
   ///
@@ -179,9 +177,6 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   /// strings from storage are converted back to objects. The implementation
   /// must be able to reverse the serialization performed by [serialize].
   ///
-  /// The [@protected] annotation indicates this method is for internal use
-  /// by the container and shouldn't be called directly by external code.
-  ///
   /// Parameters:
   ///   * [value] - The string to deserialize, as returned by [serialize].
   ///
@@ -200,9 +195,6 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   /// generates a random, unique string identifier using the internal random
   /// number generator. The generated IDs are guaranteed to be valid storage
   /// keys (non-empty and not containing delimiters).
-  ///
-  /// The [@protected] annotation indicates this method is for internal use
-  /// by the container and shouldn't be called directly by external code.
   ///
   /// Returns:
   ///   A newly generated unique ID string.
@@ -710,5 +702,67 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   Future<void> close() async {
     removeAllListeners();
     await backend.close();
+  }
+
+  /// Provides a [Stream] of values for the given [key].
+  /// The stream will emit the current value of the key and will update
+  /// whenever the value changes.
+  ///
+  /// It is important to close the stream when it is no longer needed
+  /// to avoid memory leaks.
+  ///
+  /// This can be done by cancelling the subscription to the stream.
+  Stream<E?> stream(String key) async* {
+    final E? itemValue = await get(key);
+    yield itemValue;
+
+    late final void Function() retrieveAndAdd;
+    final controller = StreamController<E?>(
+      onCancel: () => removeKeyListener(key, retrieveAndAdd),
+    );
+
+    retrieveAndAdd = () async {
+      if (controller.isClosed) return;
+      final E? value = await get(key);
+      if (!controller.isClosed) {
+        controller.add(value);
+      }
+    };
+
+    addKeyListener(key, retrieveAndAdd);
+
+    yield* controller.stream;
+    await controller.close();
+  }
+
+  /// Provides a [Stream] of values for all items in the container.
+  /// The stream will emit the current values and will update
+  /// whenever any value changes.
+  ///
+  /// It is important to close the stream when it is no longer needed
+  /// to avoid memory leaks.
+  ///
+  /// This can be done by cancelling the subscription to the stream.
+  Stream<List<E>> streamAll() async* {
+    final List<E> values = await getValues();
+    yield values;
+
+    late final void Function() retrieveAndAdd;
+    final controller = StreamController<List<E>>(
+      onCancel: () => removeListener(retrieveAndAdd),
+    );
+
+    retrieveAndAdd = () async {
+      if (controller.isClosed) return;
+      final List<E> values = await getValues();
+      if (!controller.isClosed) {
+        controller.add(values);
+      }
+    };
+
+    addListener(retrieveAndAdd);
+
+    yield* controller.stream;
+    await controller.close();
   }
 }

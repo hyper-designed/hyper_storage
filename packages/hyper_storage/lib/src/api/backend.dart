@@ -1,6 +1,8 @@
 // Copyright © 2025 Hyperdesigned. All rights reserved.
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
+/// @docImport 'storage_container.dart';
+library;
 
 import 'dart:convert';
 
@@ -17,6 +19,7 @@ import 'api.dart';
 /// It includes default implementations for common operations like handling JSON,
 /// lists, and date/time objects, reducing the boilerplate needed when implementing
 /// a new backend.
+/// {@category Backends}
 abstract class StorageBackend with GenericStorageOperationsMixin implements StorageOperationsApi {
   /// Initializes the storage backend.
   ///

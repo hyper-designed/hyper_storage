@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'api/backend.dart';
-import 'hyper_storage_container.dart';
 
 /// A volatile storage backend that stores all data in memory.
 ///
@@ -39,13 +38,6 @@ class InMemoryBackend extends StorageBackend {
 
   @override
   Future<InMemoryBackend> init() async => this;
-
-  @override
-  Future<HyperStorageContainer> container(String name) async {
-    final backend = InMemoryBackend();
-    await backend.init();
-    return HyperStorageContainer(backend: backend, name: name);
-  }
 
   @override
   Future<void> setString(String key, String value) async => _data[key] = value;

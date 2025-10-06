@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
 
+/// @docImport 'serializable_container.dart';
+library;
+
 import 'package:meta/meta.dart';
 
 import 'api.dart';

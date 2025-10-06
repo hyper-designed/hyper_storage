@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
 
+/// @docImport 'api/listenable.dart';
+library;
+
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:meta/meta.dart';
 
 import '../hyper_storage.dart';
-import 'api/api.dart';
 
 /// Function type definition for getting an item from the storage backend.
 typedef ItemGetter<E extends Object> = Future<E?> Function(StorageBackend backend, String key);
@@ -22,9 +24,16 @@ typedef ItemSetter<E extends Object> = Future<void> Function(StorageBackend back
 /// in a storage backend. It requires custom setter and getter functions
 /// to handle the specific type [E]. This is useful for types that do not
 /// require complex serialization, or when you want to manage the serialization
+/// {@category Item Holders}
 class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, ItemHolderApi<E> {
   BaseStorage? _parent;
   final String _key;
+
+  bool _isClosed = false;
+
+  /// The key associated with this item holder.
+  @internal
+  bool get isClosed => _isClosed;
 
   /// Custom getter function to retrieve the item from the backend.
   ///
@@ -142,6 +151,7 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
     removeAllListeners();
     _streamController.close();
     _parent = null;
+    _isClosed = true;
   }
 }
 
@@ -254,7 +264,7 @@ mixin ItemHolderMixin on BaseStorage {
   /// serialization. The holder automatically handles JSON encoding/decoding and
   /// integrates with the container's change notification system.
   ///
-  /// Type parameter [T] specifies the type of object to store. The object must
+  /// Type parameter [E] specifies the type of object to store. The object must
   /// be serializable to/from JSON using the provided [toJson] and [fromJson]
   /// functions.
   ///
@@ -263,8 +273,8 @@ mixin ItemHolderMixin on BaseStorage {
   ///     not only whitespace. This key is relative to the container (not
   ///     encoded).
   ///   - [fromJson]: A function that converts a JSON map back to an object of
-  ///     type [T]. This is called when retrieving the stored object.
-  ///   - [toJson]: A function that converts an object of type [T] to a JSON
+  ///     type [E]. This is called when retrieving the stored object.
+  ///   - [toJson]: A function that converts an object of type [E] to a JSON
   ///     map. This is called when storing the object.
   ///
   /// Returns:
@@ -283,7 +293,11 @@ mixin ItemHolderMixin on BaseStorage {
     required ToJson<E> toJson,
   }) {
     validateKey(key);
-    final existing = _holders[key];
+    var existing = _holders[key];
+    if (existing != null && existing.isClosed) {
+      _holders.remove(key);
+      existing = null;
+    }
     if (existing != null) {
       if (existing is JsonItemHolder<E>) {
         return existing;
@@ -333,7 +347,11 @@ mixin ItemHolderMixin on BaseStorage {
     required DeserializeCallback<E> deserialize,
   }) {
     validateKey(key);
-    final existing = _holders[key];
+    var existing = _holders[key];
+    if (existing != null && existing.isClosed) {
+      _holders.remove(key);
+      existing = null;
+    }
     if (existing != null) {
       if (existing is SerializableItemHolder<E>) {
         return existing;
@@ -389,7 +407,11 @@ mixin ItemHolderMixin on BaseStorage {
     }
     // Only run generic type validation if custom getter/setter are not provided.
     if (set == null || get == null) _validateGenericType<E>();
-    final existing = _holders[key];
+    var existing = _holders[key];
+    if (existing != null && existing.isClosed) {
+      _holders.remove(key);
+      existing = null;
+    }
     if (existing != null) {
       if (existing is ItemHolder<E>) {
         return existing;
@@ -433,7 +455,11 @@ mixin ItemHolderMixin on BaseStorage {
     required H Function(StorageBackend backend, String key) create,
   }) {
     validateKey(key);
-    final existing = _holders[key];
+    var existing = _holders[key];
+    if (existing != null && existing.isClosed) {
+      _holders.remove(key);
+      existing = null;
+    }
     if (existing != null) {
       if (existing is H) {
         return existing;

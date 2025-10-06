@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:meta/meta.dart' show protected;
@@ -27,13 +28,9 @@ import 'api/storage_container.dart';
 ///
 /// See also:
 /// - [StorageContainer] for the base class and abstract interface
+/// {@category Containers}
 final class HyperStorageContainer extends StorageContainer with ItemHolderMixin, GenericStorageOperationsMixin {
   /// Creates a new [HyperStorageContainer] instance.
-  ///
-  /// This constructor is marked [@protected] because containers should
-  /// typically be created through [HyperStorage.container] rather than
-  /// directly instantiated. Direct instantiation bypasses the container
-  /// caching system.
   ///
   /// Parameters:
   ///   * [backend] - The storage backend that handles actual persistence.
@@ -244,5 +241,48 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
     }
     notifyListeners();
     removeAllListeners();
+  }
+
+  /// Provides a [Stream] of values for the given [key].
+  /// The stream will emit the current value of the key and will update
+  /// whenever the value changes.
+  ///
+  /// It is important to close the stream when it is no longer needed
+  /// to avoid memory leaks.
+  ///
+  /// This can be done by cancelling the subscription to the stream.
+  ///
+  /// Note that only supported types are allowed for [E].
+  /// Supported types are:
+  ///   - String
+  ///   - int
+  ///   - double
+  ///   - bool
+  ///   - List of String
+  ///   - JSON Map
+  ///   - List of JSON Map
+  ///   - DateTime
+  ///   - Duration
+  Stream<E?> stream<E extends Object>(String key) async* {
+    final E? itemValue = await get<E>(key);
+    yield itemValue;
+
+    late final void Function() retrieveAndAdd;
+    final controller = StreamController<E?>(
+      onCancel: () => removeKeyListener(key, retrieveAndAdd),
+    );
+
+    retrieveAndAdd = () async {
+      if (controller.isClosed) return;
+      final E? value = await get<E>(key);
+      if (!controller.isClosed) {
+        controller.add(value);
+      }
+    };
+
+    addKeyListener(key, retrieveAndAdd);
+
+    yield* controller.stream;
+    await controller.close();
   }
 }

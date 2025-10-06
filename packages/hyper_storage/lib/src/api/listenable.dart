@@ -232,6 +232,7 @@ mixin ListenableStorage {
 ///
 /// This mixin implements the observer pattern, allowing components to be
 /// notified when data changes.
+/// {@category Reactivity}
 @protected
 mixin BaseListenable {
   /// A storage for keeping registry of listeners;

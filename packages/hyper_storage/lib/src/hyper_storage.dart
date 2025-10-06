@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:meta/meta.dart';
 
 import '../hyper_storage.dart';
-import 'api/api.dart';
 import 'api/backend.dart';
 import 'api/storage_container.dart';
 
@@ -43,6 +43,7 @@ part 'storage_base.dart';
 /// - [JsonStorageContainer] for JSON serialization
 /// - [SerializableStorageContainer] for custom object storage
 /// - [StorageBackend] for implementing custom backends
+/// {@category Getting Started}
 class HyperStorage extends _HyperStorageImpl {
   /// Cache of basic storage containers indexed by name.
   ///
@@ -218,7 +219,7 @@ class HyperStorage extends _HyperStorageImpl {
   ///   * [fromJson] - A function that converts a JSON map back to an object of
   ///     type [E]. This is called when retrieving objects.
   ///   * [idGetter] - Optional. A function that extracts the ID from an object.
-  ///     If provided, this ID is used when adding objects with [add]. If not
+  ///     If provided, this ID is used when adding objects with add methods. If not
   ///     provided, IDs are automatically generated.
   ///   * [random] - Optional. A custom random number generator for ID generation.
   ///     Useful for testing or when specific randomness characteristics are needed.
@@ -379,5 +380,48 @@ class HyperStorage extends _HyperStorageImpl {
     _instance = null;
     await backend.close();
     await super.close();
+  }
+
+  /// Provides a [Stream] of values for the given [key].
+  /// The stream will emit the current value of the key and will update
+  /// whenever the value changes.
+  ///
+  /// It is important to close the stream when it is no longer needed
+  /// to avoid memory leaks.
+  ///
+  /// This can be done by cancelling the subscription to the stream.
+  ///
+  /// Note that only supported types are allowed for [E].
+  /// Supported types are:
+  ///   - String
+  ///   - int
+  ///   - double
+  ///   - bool
+  ///   - List of String
+  ///   - JSON Map
+  ///   - List of JSON Map
+  ///   - DateTime
+  ///   - Duration
+  Stream<E?> stream<E extends Object>(String key) async* {
+    final E? itemValue = await get<E>(key);
+    yield itemValue;
+
+    late final void Function() retrieveAndAdd;
+    final controller = StreamController<E?>(
+      onCancel: () => removeKeyListener(key, retrieveAndAdd),
+    );
+
+    retrieveAndAdd = () async {
+      if (controller.isClosed) return;
+      final E? value = await get<E>(key);
+      if (!controller.isClosed) {
+        controller.add(value);
+      }
+    };
+
+    addKeyListener(key, retrieveAndAdd);
+
+    yield* controller.stream;
+    await controller.close();
   }
 }
