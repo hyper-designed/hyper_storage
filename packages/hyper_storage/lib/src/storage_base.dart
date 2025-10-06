@@ -23,7 +23,7 @@ abstract class _HyperStorageImpl extends BaseStorage
 
   /// Validates that all keys in a collection are acceptable for storage operations.
   ///
-  /// This method validates multiple keys using [_validateKey]. If the iterable
+  /// This method validates multiple keys using [validateKey]. If the iterable
   /// is null or empty, no validation is performed (this is not an error). If
   /// any key in the iterable fails validation, an [ArgumentError] is thrown.
   ///
