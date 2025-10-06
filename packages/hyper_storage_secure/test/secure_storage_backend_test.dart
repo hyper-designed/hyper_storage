@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hyper_storage_secure/hyper_storage_secure_backend.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure.dart';
 
 import 'mock_secure_storage.dart';
 
