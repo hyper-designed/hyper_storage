@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 library;
 
+export 'src/api/api.dart';
 export 'src/api/backend.dart' hide GenericStorageOperationsMixin;
 export 'src/api/listenable.dart' hide ListenableStorage;
 export 'src/api/serializable_container.dart';

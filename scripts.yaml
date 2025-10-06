@@ -13,4 +13,7 @@ test:
   - cd packages/hyper_secure_storage && flutter test
   - cd packages/hyper_storage_flutter && flutter test
 
+doc:
+  - cd packages/hyper_storage && rm -rf doc && dart doc
+
 format: dart format --fix .

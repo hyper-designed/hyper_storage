@@ -38,8 +38,10 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
   /// you to organize data into logical groups without key collisions.
   ///
   /// Parameters:
-  /// * [name] - The unique name for the container. This is used to namespace
+  /// - [name] - The unique name for the container. This is used to namespace
   ///   all keys within the container.
+  /// - [delimiter] - Optional. The character(s) used to separate the container name.
+  ///  If not provided, the default delimiter defined in [StorageContainer.defaultDelimiter]
   ///
   /// Returns a [Future] that completes with a new [HyperStorageContainer]
   /// instance configured to use this backend.
@@ -47,7 +49,11 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
   /// Throws:
   /// * [ArgumentError] if the name is empty, contains only whitespace, or
   ///   contains invalid characters.
-  Future<HyperStorageContainer> container(String name) async => HyperStorageContainer(backend: this, name: name);
+  Future<HyperStorageContainer> container(String name, {String? delimiter}) async => HyperStorageContainer(
+    backend: this,
+    name: name,
+    delimiter: delimiter,
+  );
 
   @override
   Future<bool> get isEmpty async {

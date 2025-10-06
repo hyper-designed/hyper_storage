@@ -46,10 +46,10 @@ class HiveBackend extends StorageBackend {
   Future<void> init() async => _box ??= await Hive.openBox(name);
 
   @override
-  Future<HyperStorageContainer> container(String name) async {
+  Future<HyperStorageContainer> container(String name, {String? delimiter}) async {
     final backend = HiveBackend(boxName: name);
     await backend.init();
-    return HyperStorageContainer(backend: backend, name: name);
+    return HyperStorageContainer(backend: backend, name: name, delimiter: delimiter);
   }
 
   @override

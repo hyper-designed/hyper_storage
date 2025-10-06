@@ -47,10 +47,10 @@ class LazyHiveBackend extends StorageBackend {
   ///
   /// This method creates a new box with the given [name] and initializes it.
   @override
-  Future<HyperStorageContainer> container(String name) async {
+  Future<HyperStorageContainer> container(String name, {String? delimiter}) async {
     final backend = LazyHiveBackend(boxName: name);
     await backend.init();
-    return HyperStorageContainer(backend: backend, name: name);
+    return HyperStorageContainer(backend: backend, name: name, delimiter: delimiter);
   }
 
   @override

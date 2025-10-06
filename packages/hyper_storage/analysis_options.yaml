@@ -11,6 +11,7 @@ linter:
     use_super_parameters: true
     prefer_relative_imports: true
     public_member_api_docs: true
+    comment_references: true
 
 formatter:
   page_width: 120
