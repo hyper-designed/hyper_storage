@@ -33,7 +33,7 @@ jobs:
           dart pub run coverage:test_with_coverage
           dart pub run coverage:format_coverage --packages=../../.dart_tool/package_config.json --lcov -i coverage/coverage.json -o coverage/lcov.info
       - name: Run Shared Preferences Tests
-        working-directory: ./packages/hyper_storage_shared_preference
+        working-directory: ./packages/hyper_storage_shared_preferences
         run: flutter test
       - name: Run Hive Tests
         working-directory: ./packages/hyper_storage_hive
