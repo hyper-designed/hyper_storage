@@ -50,19 +50,8 @@ The type `E` must be one of the supported types:
 
 Optionally, you can pass getter and setter functions to provide custom read/write logic for underlying storage.
 
-Example: Storing an `Enum` object as an `String` value.
 
-```dart
-enum UserRole { admin, user, guest }
-
-final ItemHolder<MyEnum> lastLoginHolder = storage.holder<UserRole>(
-  'role',
-  getter: (storage, key) async => UserRole.values.byName(await storage.getString(key) ?? 'guest'),
-  setter: (storage, key, value) async => storage.setString(key, value.name),
-);
-```
-
-Calling `storage.holder` multiple times with the same key will return the same instance of `ItemHolder`. Hyper Storage
+Calling `storage.itemHolder` multiple times with the same key will return the same instance of `ItemHolder`. Hyper Storage
 internally caches the created item holders.
 
 > If an item holder with given key already exists with a different type, an exception will be thrown.

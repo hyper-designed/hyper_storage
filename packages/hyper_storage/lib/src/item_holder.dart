@@ -26,6 +26,7 @@ typedef ItemSetter<E extends Object> = Future<void> Function(StorageBackend back
 /// to handle the specific type [E]. This is useful for types that do not
 /// require complex serialization, or when you want to manage the serialization
 /// {@category Item Holders}
+/// {@category Enums}
 class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, ItemHolderApi<E> {
   BaseStorage? _parent;
   final String _key;

@@ -18,6 +18,9 @@ dartdoc:
     Reactivity:
       markdown: docs/reactivity.md
       displayName: Reactivity
+    Enums:
+      markdown: docs/enums.md
+      displayName: Enums
   categoryOrder:
     - "Introduction"
     - "Getting Started"
@@ -25,4 +28,5 @@ dartdoc:
     - "Containers"
     - "Item Holders"
     - "Reactivity"
+    - "Enums"
   showUndocumentedCategories: true
