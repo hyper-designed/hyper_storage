@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import '../hyper_storage.dart';
 import 'api/backend.dart';
 import 'api/storage_container.dart';
+import 'utils.dart';
 
 part 'storage_base.dart';
 
@@ -403,8 +404,10 @@ class HyperStorage extends _HyperStorageImpl {
   ///   - List of JSON Map
   ///   - DateTime
   ///   - Duration
-  Stream<E?> stream<E extends Object>(String key) async* {
-    final E? itemValue = await get<E>(key);
+  ///   - Enum (requires providing [enumValues])
+  Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
+    if(enumValues != null) checkEnumType<E>(enumValues);
+    final E? itemValue = await get<E>(key, enumValues: enumValues);
     yield itemValue;
 
     late final void Function() retrieveAndAdd;
@@ -414,7 +417,7 @@ class HyperStorage extends _HyperStorageImpl {
 
     retrieveAndAdd = () async {
       if (controller.isClosed) return;
-      final E? value = await get<E>(key);
+      final E? value = await get<E>(key, enumValues: enumValues);
       if (!controller.isClosed) {
         controller.add(value);
       }
@@ -423,6 +426,8 @@ class HyperStorage extends _HyperStorageImpl {
     addKeyListener(key, retrieveAndAdd);
 
     yield* controller.stream;
+
+    // Defensive close call. Almost never reached because the stream is closed on cancel.
     await controller.close(); // coverage:ignore-line
   }
 }

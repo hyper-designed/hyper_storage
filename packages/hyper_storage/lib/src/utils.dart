@@ -18,3 +18,17 @@ Object? tryJsonDecode(String value) {
     return null;
   }
 }
+
+@internal
+void checkEnumType<E extends Object>(List<Enum> enumValues) {
+  if (enumValues is List<E>) {
+    if (enumValues.isEmpty) {
+      throw ArgumentError('The enumValues parameter cannot be empty.');
+    }
+    if (enumValues.first.runtimeType != E) {
+      throw ArgumentError('The enumValues parameter must be of type $E. Found: ${enumValues.first.runtimeType}.');
+    }
+  } else {
+    throw ArgumentError('The enumValues parameter must be of type List<$E>. Found: ${enumValues.runtimeType}.');
+  }
+}

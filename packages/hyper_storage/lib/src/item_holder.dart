@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 
 import '../hyper_storage.dart';
+import 'utils.dart';
 
 /// Function type definition for getting an item from the storage backend.
 typedef ItemGetter<E extends Object> = Future<E?> Function(StorageBackend backend, String key);
@@ -30,6 +31,8 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   final String _key;
 
   bool _isClosed = false;
+
+  final List<Enum>? _enumValues;
 
   /// The key associated with this item holder.
   @internal
@@ -56,7 +59,13 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   final StreamController<E?> _streamController = StreamController<E?>.broadcast();
 
   /// Creates a new [ItemHolder] instance.
-  ItemHolder(BaseStorage this._parent, this._key, {this.getter, this.setter});
+  ItemHolder(
+    BaseStorage this._parent,
+    this._key, {
+    this.getter,
+    this.setter,
+    List<Enum>? enumValues,
+  }) : _enumValues = enumValues;
 
   @override
   Future<bool> get exists => _parent?.backend.containsKey(_key) ?? Future.value(false);
@@ -65,7 +74,7 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   Future<E?> get() async {
     if (_parent case BaseStorage(:final backend)) {
       if (getter case var getter?) return getter(backend, _key);
-      final E? value = await backend.get(_key);
+      final E? value = await backend.get<E>(_key, enumValues: _enumValues);
       return value;
     }
     return Future.value(null);
@@ -399,6 +408,7 @@ mixin ItemHolderMixin on BaseStorage {
   /// - List of String
   /// - JSON Map
   /// - List of JSON Maps
+  /// - Enum (requires providing [enumValues] unless custom getter/setter supplied)
   ///
   /// Parameters:
   ///   - [key]: The key under which to store the item. Must be non-empty and not only whitespace.
@@ -407,6 +417,8 @@ mixin ItemHolderMixin on BaseStorage {
   ///   to retrieve the item instead of the default backend method.
   ///   - [set]: Optional custom setter function. If provided, this function will be used
   ///   to store the item instead of the default backend method.
+  ///   - [enumValues]: Optional list of all enum values when using an enum type with the
+  ///   default getter/setter. Required if [E] is an enum and you are not supplying custom accessors.
   ///
   /// Returns:
   ///   A [ItemHolder] configured to manage the item at the specified key.
@@ -417,13 +429,25 @@ mixin ItemHolderMixin on BaseStorage {
   /// See also:
   ///   - [jsonItemHolder] for JSON-specific serialization.
   ///   - [serializableItemHolder] for generic/other serialization.
-  ItemHolder<E> itemHolder<E extends Object>(String key, {ItemGetter<E>? get, ItemSetter<E>? set}) {
+  ItemHolder<E> itemHolder<E extends Object>(
+    String key, {
+    ItemGetter<E>? get,
+    ItemSetter<E>? set,
+    List<Enum>? enumValues,
+  }) {
     validateKey(key);
     if ((get == null && set != null) || (get != null && set == null)) {
       throw ArgumentError('Both getter and setter must be provided together, or neither.');
     }
     // Only run generic type validation if custom getter/setter are not provided.
-    if (set == null || get == null) _validateGenericType<E>();
+    final hasCustomAccessors = get != null && set != null;
+    if (!hasCustomAccessors) {
+      if (enumValues == null) {
+        _validateGenericType<E>();
+      } else {
+        checkEnumType<E>(enumValues);
+      }
+    }
     var existing = _holders[key];
     if (existing != null && existing.isClosed) {
       _holders.remove(key);
@@ -439,7 +463,13 @@ mixin ItemHolderMixin on BaseStorage {
       }
     }
 
-    final holder = ItemHolder<E>(this, encodeKey(key), setter: set, getter: get);
+    final holder = ItemHolder<E>(
+      this,
+      encodeKey(key),
+      setter: set,
+      getter: get,
+      enumValues: enumValues,
+    );
     _holders[key] = holder;
     return holder;
   }

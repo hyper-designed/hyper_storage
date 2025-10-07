@@ -10,6 +10,7 @@ import 'package:meta/meta.dart' show protected;
 import '../hyper_storage.dart';
 import 'api/backend.dart';
 import 'api/storage_container.dart';
+import 'utils.dart';
 
 /// A concrete implementation of [StorageContainer] for storing key-value pairs.
 ///
@@ -281,8 +282,10 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   ///   - List of JSON Map
   ///   - DateTime
   ///   - Duration
-  Stream<E?> stream<E extends Object>(String key) async* {
-    final E? itemValue = await get<E>(key);
+  ///   - Enum (requires providing [enumValues])
+  Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
+    if(enumValues != null) checkEnumType<E>(enumValues);
+    final E? itemValue = await get<E>(key, enumValues: enumValues);
     yield itemValue;
 
     late final void Function() retrieveAndAdd;
@@ -292,15 +295,14 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
 
     retrieveAndAdd = () async {
       if (controller.isClosed) return;
-      final E? value = await get<E>(key);
-      if (!controller.isClosed) {
-        controller.add(value);
-      }
+      final E? value = await get<E>(key, enumValues: enumValues);
+      if (!controller.isClosed) controller.add(value);
     };
 
     addKeyListener(key, retrieveAndAdd);
 
     yield* controller.stream;
+    // Defensive close call. Almost never reached because the stream is closed on cancel.
     await controller.close(); // coverage:ignore-line
   }
 }

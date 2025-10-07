@@ -184,18 +184,23 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
 
   @override
   Future<E?> get<E extends Object>(String key, {List<Enum>? enumValues}) async {
-    if (E == String) return await getString(key) as E?;
-    if (E == int) return await getInt(key) as E?;
-    if (E == double) return await getDouble(key) as E?;
-    if (E == bool) return await getBool(key) as E?;
-    if (E == DateTime) return await getDateTime(key) as E?;
-    if (E == Duration) return await getDuration(key) as E?;
-    if (E == List<String>) return await getStringList(key) as E?;
-    if (E == Map<String, dynamic>) return await getJson(key) as E?;
-    if (E == List<Map<String, dynamic>>) return await getJsonList(key) as E?;
-    if (enumValues != null) return await getEnum(key, enumValues) as E?;
-
-    throw UnsupportedError('Type $E is not supported');
+    return switch (E) {
+      const (String) => await getString(key) as E?,
+      const (int) => await getInt(key) as E?,
+      const (double) => await getDouble(key) as E?,
+      const (num) => await getDouble(key) as E?,
+      const (bool) => await getBool(key) as E?,
+      const (DateTime) => await getDateTime(key) as E?,
+      const (Duration) => await getDuration(key) as E?,
+      const (List<String>) => await getStringList(key) as E?,
+      const (Map<String, dynamic>) => await getJson(key) as E?,
+      const (List<Map<String, dynamic>>) => await getJsonList(key) as E?,
+      _ when enumValues != null => () {
+        checkEnumType<E>(enumValues);
+        return getEnum(key, enumValues.cast<Enum>()) as E?;
+      }(),
+      _ => throw UnsupportedError('Type $E is not supported. If this is an enum, provide the enumValues parameter.'),
+    };
   }
 
   @override
