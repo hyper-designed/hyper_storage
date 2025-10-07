@@ -5,6 +5,8 @@ import 'package:test/test.dart';
 
 import 'helpers/test_helpers.dart';
 
+enum HolderTestEnum { alpha, beta, gamma }
+
 void main() {
   group('ItemHolder', () {
     late InMemoryBackend backend;
@@ -89,6 +91,24 @@ void main() {
         expect(value, map);
       });
 
+      test('set and get work for Enum with enumValues', () async {
+        final holder = container.itemHolder<HolderTestEnum>(
+          'enumKey',
+          enumValues: HolderTestEnum.values,
+        );
+
+        await holder.set(HolderTestEnum.beta);
+        final value = await holder.get();
+        expect(value, HolderTestEnum.beta);
+      });
+
+      test('enum ItemHolder without enumValues throws', () {
+        expect(
+          () => container.itemHolder<HolderTestEnum>('enumKey'),
+          throwsUnsupportedError,
+        );
+      });
+
       test('exists returns false when item does not exist', () async {
         final holder = container.itemHolder<String>('key');
         expect(await holder.exists, false);
@@ -114,6 +134,56 @@ void main() {
         await holder.set('value1');
         await holder.set('value2');
         expect(await holder.get(), 'value2');
+      });
+    });
+
+    group('enum support', () {
+      test('reuses cached holder when enumValues match', () async {
+        final holder1 = container.itemHolder<HolderTestEnum>(
+          'enumKey',
+          enumValues: HolderTestEnum.values,
+        );
+
+        final holder2 = container.itemHolder<HolderTestEnum>(
+          'enumKey',
+          enumValues: HolderTestEnum.values,
+        );
+
+        expect(holder1, same(holder2));
+      });
+
+      test('throws when enumValues differ for existing holder', () async {
+        container.itemHolder<HolderTestEnum>(
+          'enumKey',
+          enumValues: HolderTestEnum.values,
+        );
+
+        expect(
+          () => container.itemHolder<HolderTestEnum>(
+            'enumKey',
+            enumValues: HolderTestEnum.values.reversed.toList(),
+          ),
+          throwsStateError,
+        );
+      });
+
+      test('throws when upgrading existing non-enum holder to enum', () async {
+        container.itemHolder<HolderTestEnum>(
+          'enumKey',
+          get: (backend, key) async {
+            final name = await backend.getString(key);
+            return name == null ? null : HolderTestEnum.values.byName(name);
+          },
+          set: (backend, key, value) => backend.setString(key, value.name),
+        );
+
+        expect(
+          () => container.itemHolder<HolderTestEnum>(
+            'enumKey',
+            enumValues: HolderTestEnum.values,
+          ),
+          throwsStateError,
+        );
       });
     });
 
@@ -377,6 +447,30 @@ void main() {
         expect(values.length, greaterThanOrEqualTo(2));
 
         await subscription.cancel();
+      });
+
+      test('listen works with enum values when enumValues provided', () async {
+        final holder = container.itemHolder<HolderTestEnum>(
+          'enumKey',
+          enumValues: HolderTestEnum.values,
+        );
+
+        final values = <HolderTestEnum?>[];
+        final completer = Completer<void>();
+
+        final subscription = holder.listen((value) {
+          values.add(value);
+          if (values.contains(HolderTestEnum.gamma) && !completer.isCompleted) {
+            completer.complete();
+          }
+        });
+
+        await holder.set(HolderTestEnum.gamma);
+        await completer.future.timeout(Duration(seconds: 2), onTimeout: () {});
+
+        await subscription.cancel();
+
+        expect(values, contains(HolderTestEnum.gamma));
       });
 
       test('listen handles errors', () async {

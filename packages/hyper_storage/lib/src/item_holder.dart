@@ -454,13 +454,8 @@ mixin ItemHolderMixin on BaseStorage {
       existing = null;
     }
     if (existing != null) {
-      if (existing is ItemHolder<E>) {
-        return existing;
-      } else {
-        throw ArgumentError(
-          'An ItemHolder with key "$key" already exists with a different type: ${existing.runtimeType}.',
-        );
-      }
+      _checkExistingMatch<E>(key, existing, hasCustomAccessors: hasCustomAccessors, enumValues: enumValues);
+      return existing as ItemHolder<E>;
     }
 
     final holder = ItemHolder<E>(
@@ -543,5 +538,61 @@ mixin ItemHolderMixin on BaseStorage {
       holder.dispose();
     }
     _holders.clear();
+  }
+
+  /// Ensures an existing cached holder is compatible with the requested configuration.
+  ///
+  /// The method verifies that the cached holder uses the same generic type, that
+  /// custom getter/setter accessors are either present or absent on both versions,
+  /// and that enum configurations (when provided) match exactly. It throws when
+  /// the caller attempts to change any of these characteristics for the same key.
+  void _checkExistingMatch<E extends Object>(
+    String key,
+    ItemHolder<Object> existing, {
+    required bool hasCustomAccessors,
+    List<Enum>? enumValues,
+  }) {
+    if (existing is ItemHolder<E>) {
+      // Validate consistency between existing and new holder configurations
+      final existingHasCustomAccessors = existing.getter != null || existing.setter != null;
+      if (existingHasCustomAccessors != hasCustomAccessors) {
+        throw StateError(
+          'Cannot change ItemHolder configuration for key "$key". '
+          'Existing holder ${existingHasCustomAccessors ? "has" : "does not have"} custom accessors, '
+          'but new configuration ${hasCustomAccessors ? "has" : "does not have"} custom accessors.',
+        );
+      }
+      // Validate enum values consistency
+      if (existing._enumValues != null || enumValues != null) {
+        if (existing._enumValues == null || enumValues == null) {
+          throw StateError(
+            'Cannot change ItemHolder configuration for key "$key". '
+            'Existing holder ${existing._enumValues != null ? "has" : "does not have"} enumValues, '
+            'but new configuration ${enumValues != null ? "has" : "does not have"} enumValues.',
+          );
+        }
+        // Both have enumValues, check if they match
+        if (existing._enumValues.length != enumValues.length) {
+          throw StateError(
+            'Cannot change enumValues for existing ItemHolder with key "$key". '
+            'Existing holder has ${existing._enumValues.length} values, '
+            'but new configuration has ${enumValues.length} values.',
+          );
+        }
+        // Check if all values match in order
+        for (var i = 0; i < existing._enumValues.length; i++) {
+          if (existing._enumValues[i] != enumValues[i]) {
+            throw StateError(
+              'Cannot change enumValues for existing ItemHolder with key "$key". '
+              'EnumValues differ from existing holder.',
+            );
+          }
+        }
+      }
+    } else {
+      throw ArgumentError(
+        'An ItemHolder with key "$key" already exists with a different type: ${existing.runtimeType}.',
+      );
+    }
   }
 }

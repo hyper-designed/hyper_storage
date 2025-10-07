@@ -1,6 +1,8 @@
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
+enum MemoryTestEnum { pending, completed, cancelled }
+
 void main() {
   group('InMemoryBackend', () {
     late InMemoryBackend backend;
@@ -127,6 +129,26 @@ void main() {
 
       test('getDuration returns null for non-existent key', () async {
         expect(await backend.getDuration('nonExistent'), isNull);
+      });
+    });
+
+    group('Enum operations', () {
+      test('setEnum and getEnum', () async {
+        await backend.setEnum('status', MemoryTestEnum.completed);
+        final result = await backend.getEnum('status', MemoryTestEnum.values);
+        expect(result, MemoryTestEnum.completed);
+      });
+
+      test('getEnum returns null for unknown value', () async {
+        await backend.setString('status', 'unknown');
+        final result = await backend.getEnum('status', MemoryTestEnum.values);
+        expect(result, isNull);
+      });
+
+      test('generic get retrieves enum when values provided', () async {
+        await backend.setEnum('status', MemoryTestEnum.pending);
+        final result = await backend.get<MemoryTestEnum>('status', enumValues: MemoryTestEnum.values);
+        expect(result, MemoryTestEnum.pending);
       });
     });
 

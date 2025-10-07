@@ -195,9 +195,9 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
       const (List<String>) => await getStringList(key) as E?,
       const (Map<String, dynamic>) => await getJson(key) as E?,
       const (List<Map<String, dynamic>>) => await getJsonList(key) as E?,
-      _ when enumValues != null => () {
+      _ when enumValues != null => await () async {
         checkEnumType<E>(enumValues);
-        return getEnum(key, enumValues.cast<Enum>()) as E?;
+        return await getEnum(key, enumValues.cast<Enum>()) as E?;
       }(),
       _ => throw UnsupportedError('Type $E is not supported. If this is an enum, provide the enumValues parameter.'),
     };

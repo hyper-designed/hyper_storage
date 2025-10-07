@@ -1,6 +1,8 @@
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
+enum TestEnum { alpha, beta, gamma }
+
 /// A minimal backend that only implements the required abstract methods,
 /// allowing us to test the default implementations in StorageBackend.
 class MinimalBackend extends StorageBackend {
@@ -288,6 +290,30 @@ void main() {
       });
     });
 
+    group('enum operations', () {
+      test('setEnum stores enum by name', () async {
+        await backend.setEnum('status', TestEnum.alpha);
+        expect(await backend.getString('status'), 'alpha');
+      });
+
+      test('getEnum retrieves stored enum', () async {
+        await backend.setString('status', 'beta');
+        final result = await backend.getEnum('status', TestEnum.values);
+        expect(result, TestEnum.beta);
+      });
+
+      test('getEnum returns null when key absent', () async {
+        final result = await backend.getEnum('missing', TestEnum.values);
+        expect(result, isNull);
+      });
+
+      test('getEnum returns null when name does not match', () async {
+        await backend.setString('status', 'delta');
+        final result = await backend.getEnum('status', TestEnum.values);
+        expect(result, isNull);
+      });
+    });
+
     group('generic get method', () {
       test('get<String> retrieves string', () async {
         await backend.setString('key', 'value');
@@ -339,6 +365,18 @@ void main() {
         expect(await backend.get<List<Map<String, dynamic>>>('key'), [
           {'id': 1},
         ]);
+      });
+
+      test('get<TestEnum> retrieves enum when values provided', () async {
+        await backend.setString('enumKey', 'gamma');
+        final result = await backend.get<TestEnum>('enumKey', enumValues: TestEnum.values);
+        expect(result, TestEnum.gamma);
+      });
+
+      test('get<TestEnum> returns null when stored name missing', () async {
+        await backend.setString('enumKey', 'unknown');
+        final result = await backend.get<TestEnum>('enumKey', enumValues: TestEnum.values);
+        expect(result, isNull);
       });
     });
 
@@ -395,6 +433,12 @@ void main() {
           {'id': 1},
           {'id': 2},
         ]);
+      });
+
+      test('set with Enum value stores name', () async {
+        await backend.set('enumKey', TestEnum.beta);
+        expect(await backend.getString('enumKey'), 'beta');
+        expect(await backend.getEnum('enumKey', TestEnum.values), TestEnum.beta);
       });
     });
 
@@ -470,6 +514,14 @@ void main() {
       test('set throws UnsupportedError for List<double>', () async {
         expect(
           () => backend.set('key', [1.1, 2.2, 3.3]),
+          throwsUnsupportedError,
+        );
+      });
+
+      test('get<E> throws UnsupportedError for enum without values', () async {
+        await backend.setString('enumKey', 'alpha');
+        expect(
+          () => backend.get<TestEnum>('enumKey'),
           throwsUnsupportedError,
         );
       });

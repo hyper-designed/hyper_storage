@@ -3,6 +3,8 @@ import 'package:test/test.dart';
 
 import 'helpers/test_helpers.dart';
 
+enum StorageTestEnum { pending, success, failed }
+
 void main() {
   group('HyperStorage', () {
     tearDown(() async {
@@ -322,6 +324,36 @@ void main() {
         expect(retrieved, jsonList);
       });
 
+      test('setEnum and getEnum', () async {
+        final storage = HyperStorage.instance;
+        await storage.setEnum('status', StorageTestEnum.success);
+        final result = await storage.getEnum('status', StorageTestEnum.values);
+        expect(result, StorageTestEnum.success);
+      });
+
+      test('getEnum returns null when stored name mismatches', () async {
+        final storage = HyperStorage.instance;
+        await storage.backend.setString('status', 'unknown');
+        final result = await storage.getEnum('status', StorageTestEnum.values);
+        expect(result, isNull);
+      });
+
+      test('get<StorageTestEnum> retrieves enum when values provided', () async {
+        final storage = HyperStorage.instance;
+        await storage.setEnum('status', StorageTestEnum.pending);
+        final result = await storage.get<StorageTestEnum>('status', enumValues: StorageTestEnum.values);
+        expect(result, StorageTestEnum.pending);
+      });
+
+      test('get<StorageTestEnum> throws when enum values missing', () async {
+        final storage = HyperStorage.instance;
+        await storage.backend.setString('status', 'failed');
+        expect(
+          () => storage.get<StorageTestEnum>('status'),
+          throwsUnsupportedError,
+        );
+      });
+
       test('removeAll deletes multiple keys', () async {
         final storage = HyperStorage.instance;
         await storage.setString('key1', 'value1');
@@ -508,6 +540,20 @@ void main() {
 
         expect(
           () => storage.setString('   ', 'value'),
+          throwsArgumentError,
+        );
+      });
+
+      test('validates keys for enum operations', () async {
+        final storage = HyperStorage.instance;
+
+        expect(
+          () => storage.setEnum('', StorageTestEnum.failed),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => storage.getEnum('   ', StorageTestEnum.values),
           throwsArgumentError,
         );
       });
@@ -880,6 +926,39 @@ void main() {
         await Future.delayed(Duration(milliseconds: 50));
         await doubleSub.cancel();
         expect(doubleValues, contains(3.14));
+
+        // Test with enum
+        await storage.setEnum('enumKey', StorageTestEnum.success);
+        final enumStream = storage.stream<StorageTestEnum>(
+          'enumKey',
+          enumValues: StorageTestEnum.values,
+        );
+        final enumValues = <StorageTestEnum?>[];
+        final enumSub = enumStream.listen(enumValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await enumSub.cancel();
+        expect(enumValues, contains(StorageTestEnum.success));
+      });
+
+      test('stream() updates enum values', () async {
+        final storage = HyperStorage.instance;
+        await storage.setEnum('enumKey', StorageTestEnum.pending);
+
+        final stream = storage.stream<StorageTestEnum>(
+          'enumKey',
+          enumValues: StorageTestEnum.values,
+        );
+        final values = <StorageTestEnum?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await storage.setEnum('enumKey', StorageTestEnum.failed);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, containsAll([StorageTestEnum.pending, StorageTestEnum.failed]));
       });
 
       test('stream() works with DateTime', () async {

@@ -1,6 +1,10 @@
 import 'package:hyper_storage/src/utils.dart';
 import 'package:test/test.dart';
 
+enum _TestEnum { alpha, beta, gamma }
+
+enum _OtherEnum { one, two }
+
 void main() {
   group('tryJsonDecode', () {
     group('valid JSON', () {
@@ -275,6 +279,58 @@ void main() {
         expect(() => tryJsonDecode(largeInvalidString), returnsNormally);
         expect(tryJsonDecode(largeInvalidString), null);
       });
+    });
+  });
+
+  group('checkEnumType', () {
+    test('accepts enum list matching generic type', () {
+      expect(() => checkEnumType<_TestEnum>(_TestEnum.values), returnsNormally);
+    });
+
+    test('throws when enumValues is empty', () {
+      final enumValues = <_TestEnum>[];
+
+      expect(
+        () => checkEnumType<_TestEnum>(enumValues),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('cannot be empty'),
+          ),
+        ),
+      );
+    });
+
+    test('throws when enumValues first element does not match generic type', () {
+      expect(
+        () => checkEnumType<Enum>(_TestEnum.values),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              contains('must be of type Enum'),
+              contains('Found: _TestEnum'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('throws when enumValues list type does not match generic type', () {
+      final enumValues = List<Enum>.from(_OtherEnum.values);
+
+      expect(
+        () => checkEnumType<_TestEnum>(enumValues),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('List<_TestEnum>'),
+          ),
+        ),
+      );
     });
   });
 }

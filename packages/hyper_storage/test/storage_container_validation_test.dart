@@ -1,6 +1,8 @@
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
+enum ValidationEnum { first, second }
+
 void main() {
   group('StorageContainer Validation', () {
     late InMemoryBackend backend;
@@ -153,6 +155,18 @@ void main() {
 
         expect(
           () => container.getString('   '),
+          throwsArgumentError,
+        );
+      });
+
+      test('validates keys for enum operations', () async {
+        expect(
+          () => container.setEnum('', ValidationEnum.first),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => container.getEnum('   ', ValidationEnum.values),
           throwsArgumentError,
         );
       });

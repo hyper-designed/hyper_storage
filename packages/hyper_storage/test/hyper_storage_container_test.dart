@@ -1,6 +1,8 @@
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
+enum ContainerTestEnum { foo, bar, baz }
+
 void main() {
   group('HyperStorageContainer', () {
     late InMemoryBackend backend;
@@ -86,6 +88,37 @@ void main() {
         final duration = Duration(milliseconds: -1000);
         await container.setDuration('negative', duration);
         expect(await container.getDuration('negative'), duration);
+      });
+    });
+
+    group('Enum operations', () {
+      test('setEnum and getEnum', () async {
+        await container.setEnum('status', ContainerTestEnum.bar);
+        final result = await container.getEnum('status', ContainerTestEnum.values);
+        expect(result, ContainerTestEnum.bar);
+      });
+
+      test('getEnum returns null when key missing', () async {
+        final result = await container.getEnum('missing', ContainerTestEnum.values);
+        expect(result, isNull);
+      });
+
+      test('getEnum returns null when stored value mismatches', () async {
+        await backend.setString('test___status', 'unknown');
+        final result = await container.getEnum('status', ContainerTestEnum.values);
+        expect(result, isNull);
+      });
+
+      test('generic get retrieves enum with values', () async {
+        await container.setEnum('status', ContainerTestEnum.foo);
+        final result = await container.get<ContainerTestEnum>('status', enumValues: ContainerTestEnum.values);
+        expect(result, ContainerTestEnum.foo);
+      });
+
+      test('generic set stores enum name', () async {
+        await container.set('status', ContainerTestEnum.baz);
+        final stored = await backend.getString('test___status');
+        expect(stored, 'baz');
       });
     });
 
@@ -533,6 +566,38 @@ void main() {
         await Future.delayed(Duration(milliseconds: 50));
         await doubleSub.cancel();
         expect(doubleValues, contains(3.14));
+
+        // Test with enum
+        await container.setEnum('enumKey', ContainerTestEnum.bar);
+        final enumStream = container.stream<ContainerTestEnum>(
+          'enumKey',
+          enumValues: ContainerTestEnum.values,
+        );
+        final enumValues = <ContainerTestEnum?>[];
+        final enumSub = enumStream.listen(enumValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await enumSub.cancel();
+        expect(enumValues, contains(ContainerTestEnum.bar));
+      });
+
+      test('stream() updates enum values', () async {
+        await container.setEnum('enumKey', ContainerTestEnum.foo);
+
+        final stream = container.stream<ContainerTestEnum>(
+          'enumKey',
+          enumValues: ContainerTestEnum.values,
+        );
+        final values = <ContainerTestEnum?>[];
+
+        final subscription = stream.listen(values.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await container.setEnum('enumKey', ContainerTestEnum.baz);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await subscription.cancel();
+
+        expect(values, containsAll([ContainerTestEnum.foo, ContainerTestEnum.baz]));
       });
 
       test('stream() cleans up listener on cancellation', () async {
