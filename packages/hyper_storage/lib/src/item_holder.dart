@@ -7,6 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
@@ -528,6 +529,7 @@ mixin ItemHolderMixin on BaseStorage {
       const (List<String>) => true,
       const (Map<String, dynamic>) => true,
       const (List<Map<String, dynamic>>) => true,
+      const (Uint8List) => true,
       _ => throw UnsupportedError('Type $E is not supported'),
     };
   }
