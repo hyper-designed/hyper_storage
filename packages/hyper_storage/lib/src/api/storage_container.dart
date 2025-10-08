@@ -290,7 +290,9 @@ abstract class StorageContainer extends BaseStorage {
     if (name.isEmpty) throw StateError('Container name cannot be empty when checking associated keys.');
     if (name.trim().isEmpty) {
       // Defensive check; should never happen due to constructor validation.
-      throw StateError('Container name cannot be only whitespace when checking associated keys.'); // coverage:ignore-line
+      throw StateError(
+        'Container name cannot be only whitespace when checking associated keys.',
+      ); // coverage:ignore-line
     }
     return rawKey.startsWith('$name$delimiter');
   }
