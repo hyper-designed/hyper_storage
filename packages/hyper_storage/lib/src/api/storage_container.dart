@@ -261,7 +261,7 @@ abstract class StorageContainer extends BaseStorage {
   ///
   /// See also:
   /// - [encodeKey] for the reverse operation
-  /// - [isAssociatedKey] for checking if a key belongs to this container
+  /// - [_isAssociatedKey] for checking if a key belongs to this container
   @visibleForTesting
   @protected
   @internal
@@ -284,18 +284,7 @@ abstract class StorageContainer extends BaseStorage {
   ///   * [StateError] if the container name is empty or only whitespace when
   ///     performing the check. This should never happen in normal operation as
   ///     the name is validated during construction.
-  @internal
-  @protected
-  bool isAssociatedKey(String rawKey) {
-    if (name.isEmpty) throw StateError('Container name cannot be empty when checking associated keys.');
-    if (name.trim().isEmpty) {
-      // Defensive check; should never happen due to constructor validation.
-      throw StateError(
-        'Container name cannot be only whitespace when checking associated keys.',
-      ); // coverage:ignore-line
-    }
-    return rawKey.startsWith('$name$delimiter');
-  }
+  bool _isAssociatedKey(String rawKey) => rawKey.startsWith('$name$delimiter');
 
   /// Returns a set of all encoded keys in the container.
   ///
@@ -310,11 +299,11 @@ abstract class StorageContainer extends BaseStorage {
   ///
   /// See also:
   /// - [getDecodedKeys] for getting keys without the container prefix
-  /// - [isAssociatedKey] which is used for filtering
+  /// - [_isAssociatedKey] which is used for filtering
   @protected
   Future<Set<String>> getEncodedKeys() async {
     final allKeys = await backend.getKeys();
-    return allKeys.where(isAssociatedKey).toSet();
+    return allKeys.where(_isAssociatedKey).toSet();
   }
 
   /// Returns a set of all decoded keys in the container.
@@ -331,11 +320,11 @@ abstract class StorageContainer extends BaseStorage {
   /// See also:
   /// - [getEncodedKeys] for getting keys with the container prefix
   /// - [decodeKey] which is used to decode each key
-  /// - [isAssociatedKey] which is used for filtering
+  /// - [_isAssociatedKey] which is used for filtering
   @protected
   Future<Set<String>> getDecodedKeys() async {
     final allKeys = await backend.getKeys();
-    return allKeys.where(isAssociatedKey).map(decodeKey).toSet();
+    return allKeys.where(_isAssociatedKey).map(decodeKey).toSet();
   }
 
   /// Clears all data stored in this container.
@@ -361,31 +350,31 @@ abstract class StorageContainer extends BaseStorage {
 
   @override
   bool hasKeyListeners(String key) {
-    if (isAssociatedKey(key)) return super.hasKeyListeners(key);
+    if (_isAssociatedKey(key)) return super.hasKeyListeners(key);
     return super.hasKeyListeners(encodeKey(key));
   }
 
   @override
   void addKeyListener(String key, ListenableCallback listener) {
-    if (isAssociatedKey(key)) return super.addKeyListener(key, listener);
+    if (_isAssociatedKey(key)) return super.addKeyListener(key, listener);
     super.addKeyListener(encodeKey(key), listener);
   }
 
   @override
   void removeKeyListener(String key, ListenableCallback listener) {
-    if (isAssociatedKey(key)) return super.removeKeyListener(key, listener);
+    if (_isAssociatedKey(key)) return super.removeKeyListener(key, listener);
     super.removeKeyListener(encodeKey(key), listener);
   }
 
   @override
   void removeAllKeyListeners(String key) {
-    if (isAssociatedKey(key)) return super.removeAllKeyListeners(key);
+    if (_isAssociatedKey(key)) return super.removeAllKeyListeners(key);
     super.removeAllKeyListeners(encodeKey(key));
   }
 
   @override
   void notifyKeyListeners(String key) {
-    if (isAssociatedKey(key)) return super.notifyKeyListeners(key);
+    if (_isAssociatedKey(key)) return super.notifyKeyListeners(key);
     super.notifyKeyListeners(encodeKey(key));
   }
 
@@ -393,7 +382,7 @@ abstract class StorageContainer extends BaseStorage {
   void notifyListeners([String? key]) {
     if (key == null) return super.notifyListeners(key);
 
-    if (isAssociatedKey(key)) return super.notifyListeners(key);
+    if (_isAssociatedKey(key)) return super.notifyListeners(key);
     super.notifyListeners(encodeKey(key));
   }
 }

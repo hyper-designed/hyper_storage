@@ -32,6 +32,7 @@ abstract class _HyperStorageImpl extends BaseStorage
   @internal
   @protected
   @override
+  @visibleForTesting
   String encodeKey(String key) => key;
 
   /// Validates that all keys in a collection are acceptable for storage operations.

@@ -459,5 +459,140 @@ void main() {
         expect(await backend.getString('key:with:colons'), 'value4');
       });
     });
+
+    group('box reopening', () {
+      test('getString reopens box if closed', () async {
+        await backend.setString('key', 'value');
+        await backend.box.close();
+
+        // Should automatically reopen the box
+        expect(await backend.getString('key'), 'value');
+        expect(backend.box.isOpen, true);
+      });
+
+      test('setString reopens box if closed', () async {
+        await backend.box.close();
+
+        // Should automatically reopen the box
+        await backend.setString('newKey', 'newValue');
+        expect(await backend.getString('newKey'), 'newValue');
+        expect(backend.box.isOpen, true);
+      });
+
+      test('getInt reopens box if closed', () async {
+        await backend.setInt('number', 42);
+        await backend.box.close();
+
+        expect(await backend.getInt('number'), 42);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('setInt reopens box if closed', () async {
+        await backend.box.close();
+
+        await backend.setInt('count', 100);
+        expect(await backend.getInt('count'), 100);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('getDouble reopens box if closed', () async {
+        await backend.setDouble('price', 9.99);
+        await backend.box.close();
+
+        expect(await backend.getDouble('price'), 9.99);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('setDouble reopens box if closed', () async {
+        await backend.box.close();
+
+        await backend.setDouble('pi', 3.14);
+        expect(await backend.getDouble('pi'), 3.14);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('getBool reopens box if closed', () async {
+        await backend.setBool('flag', true);
+        await backend.box.close();
+
+        expect(await backend.getBool('flag'), true);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('setBool reopens box if closed', () async {
+        await backend.box.close();
+
+        await backend.setBool('enabled', false);
+        expect(await backend.getBool('enabled'), false);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('remove reopens box if closed', () async {
+        await backend.setString('toRemove', 'value');
+        await backend.box.close();
+
+        await backend.remove('toRemove');
+        expect(await backend.containsKey('toRemove'), false);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('removeAll reopens box if closed', () async {
+        await backend.setString('key1', 'value1');
+        await backend.setString('key2', 'value2');
+        await backend.box.close();
+
+        await backend.removeAll(['key1', 'key2']);
+        expect(await backend.containsKey('key1'), false);
+        expect(await backend.containsKey('key2'), false);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('containsKey reopens box if closed', () async {
+        await backend.setString('exists', 'value');
+        await backend.box.close();
+
+        expect(await backend.containsKey('exists'), true);
+        expect(backend.box.isOpen, true);
+      });
+
+      test('getKeys reopens box if closed', () async {
+        await backend.setString('key1', 'value1');
+        await backend.setString('key2', 'value2');
+        await backend.box.close();
+
+        final keys = await backend.getKeys();
+        expect(keys, containsAll(['key1', 'key2']));
+        expect(backend.box.isOpen, true);
+      });
+
+      test('getAll reopens box if closed', () async {
+        await backend.setString('key1', 'value1');
+        await backend.setInt('key2', 42);
+        await backend.box.close();
+
+        final data = await backend.getAll({'key1', 'key2'});
+        expect(data, {'key1': 'value1', 'key2': 42});
+        expect(backend.box.isOpen, true);
+      });
+
+      test('multiple operations after box close work correctly', () async {
+        // Set up some initial data
+        await backend.setString('str', 'text');
+        await backend.setInt('num', 10);
+        await backend.box.close();
+
+        // Multiple operations should all work
+        await backend.setString('new', 'value');
+        expect(await backend.getString('str'), 'text');
+        await backend.setInt('num', 20);
+        expect(await backend.getInt('num'), 20);
+        await backend.setBool('bool', true);
+        expect(await backend.getBool('bool'), true);
+
+        final keys = await backend.getKeys();
+        expect(keys, containsAll(['str', 'num', 'new', 'bool']));
+        expect(backend.box.isOpen, true);
+      });
+    });
   });
 }
