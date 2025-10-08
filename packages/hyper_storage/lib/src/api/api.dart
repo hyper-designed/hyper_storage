@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:meta/meta.dart';
 
 import 'backend.dart';
@@ -548,6 +550,39 @@ abstract interface class StorageOperationsApi {
   /// Throws:
   /// * [ArgumentError] if the key is invalid.
   Future<List<String>?> getStringList(String key);
+
+  /// Saves a byte array with the given [key].
+  ///
+  /// This method stores a byte array (Uint8List) in the storage, associating it
+  /// with the specified key. If a value already exists for this key, it will be
+  /// replaced.
+  ///
+  /// Parameters:
+  /// - [key]: The unique identifier for the byte array.
+  /// - [bytes]: The byte array to store.
+  ///
+  /// Returns a [Future] that completes when the byte array has been successfully
+  /// stored.
+  ///
+  /// Throws:
+  /// - [ArgumentError] if the key is invalid.
+  Future<void> setBytes(String key, Uint8List bytes);
+
+  /// Retrieves a byte array by its [key].
+  ///
+  /// This method fetches a byte array (Uint8List) previously stored using [setBytes].
+  /// If no value exists for the given key, or the stored value is not a byte array,
+  /// this method returns `null`.
+  ///
+  /// Parameters:
+  /// - [key]: The unique identifier of the byte array to retrieve.
+  ///
+  /// Returns a [Future] that completes with the stored byte array if found,
+  /// or `null` if the key doesn't exist or the value is not a byte array.
+  ///
+  /// Throws:
+  /// - [ArgumentError] if the key is invalid.
+  Future<Uint8List?> getBytes(String key);
 
   /// Saves a JSON object (Map) with the given [key].
   ///

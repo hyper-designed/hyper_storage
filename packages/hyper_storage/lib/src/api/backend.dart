@@ -5,6 +5,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
@@ -137,6 +138,16 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
   Future<void> setDuration(String key, Duration value) => setInt(key, value.inMilliseconds);
 
   @override
+  Future<void> setBytes(String key, List<int> value) => setString(key, base64Encode(value));
+
+  @override
+  Future<Uint8List?> getBytes(String key) async {
+    final value = await getString(key);
+    if (value == null) return null;
+    return base64Decode(value);
+  }
+
+  @override
   Future<void> setEnum<E extends Enum>(String key, E value) => setString(key, value.name);
 
   @override
@@ -159,15 +170,17 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
 /// a storage backend by providing type-aware routing logic.
 ///
 /// Supported types:
-/// * [String] - Routes to [getString] / [setString]
-/// * [int] - Routes to [getInt] / [setInt]
-/// * [double] - Routes to [getDouble] / [setDouble]
-/// * [bool] - Routes to [getBool] / [setBool]
-/// * [DateTime] - Routes to [getDateTime] / [setDateTime]
-/// * [Duration] - Routes to [getDuration] / [setDuration]
-/// * [List<String>] - Routes to [getStringList] / [setStringList]
-/// * [Map<String, dynamic>] - Routes to [getJson] / [setJson]
-/// * [List<Map<String, dynamic>>] - Routes to [getJsonList] / [setJsonList]
+/// - [String] - Routes to [getString] / [setString]
+/// - [int] - Routes to [getInt] / [setInt]
+/// - [double] - Routes to [getDouble] / [setDouble]
+/// - [bool] - Routes to [getBool] / [setBool]
+/// - [DateTime] - Routes to [getDateTime] / [setDateTime]
+/// - [Duration] - Routes to [getDuration] / [setDuration]
+/// - [List<String>] - Routes to [getStringList] / [setStringList]
+/// - [Map<String, dynamic>] - Routes to [getJson] / [setJson]
+/// - [List<Map<String, dynamic>>] - Routes to [getJsonList] / [setJsonList]
+/// - [Enum] - Routes to [getEnum] / [setEnum] (requires `enumValues` parameter for `get`)
+/// - [Uint8List] - Routes to [getBytes] / [setBytes]
 @internal
 mixin GenericStorageOperationsMixin implements StorageOperationsApi {
   @override
@@ -195,6 +208,7 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
       const (List<String>) => await getStringList(key) as E?,
       const (Map<String, dynamic>) => await getJson(key) as E?,
       const (List<Map<String, dynamic>>) => await getJsonList(key) as E?,
+      const (Uint8List) => await getBytes(key) as E?,
       _ when enumValues != null => await () async {
         checkEnumType<E>(enumValues);
         return await getEnum(key, enumValues.cast<Enum>()) as E?;
@@ -216,6 +230,7 @@ mixin GenericStorageOperationsMixin implements StorageOperationsApi {
       Map<String, dynamic> value => setJson(key, value),
       List<Map<String, dynamic>> value => setJsonList(key, value),
       Enum value => setString(key, value.name),
+      Uint8List value => setBytes(key, value),
       _ => throw UnsupportedError('Type ${value.runtimeType} is not supported'),
     };
   }

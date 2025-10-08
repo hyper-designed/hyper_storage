@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
@@ -406,7 +408,7 @@ class HyperStorage extends _HyperStorageImpl {
   ///   - Duration
   ///   - Enum (requires providing [enumValues])
   Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
-    if(enumValues != null) checkEnumType<E>(enumValues);
+    if (enumValues != null) checkEnumType<E>(enumValues);
     final E? itemValue = await get<E>(key, enumValues: enumValues);
     yield itemValue;
 

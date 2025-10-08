@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart' show protected;
 
@@ -234,6 +235,20 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   }
 
   @override
+  Future<Uint8List?> getBytes(String key) async {
+    validateKey(key);
+    final value = await backend.getString(encodeKey(key));
+    if (value == null) return null;
+    return base64Decode(value);
+  }
+
+  @override
+  Future<void> setBytes(String key, Uint8List bytes) {
+    validateKey(key);
+    return backend.setString(encodeKey(key), base64Encode(bytes));
+  }
+
+  @override
   Future<void> removeAll(Iterable<String> keys) async {
     validateKeys(keys);
     await backend.removeAll(keys.map(encodeKey));
@@ -241,25 +256,6 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
       notifyKeyListeners(key);
     }
     notifyListeners();
-  }
-
-  @override
-  Future<void> close() async {
-    removeAllListeners();
-    await backend.close();
-    await super.close();
-  }
-
-  @override
-  Future<void> clear() async {
-    final encodedKeys = await getEncodedKeys();
-    final decodedKeys = encodedKeys.map(decodeKey).toList();
-    await backend.removeAll(encodedKeys);
-    for (final key in decodedKeys) {
-      notifyKeyListeners(key);
-    }
-    notifyListeners();
-    removeAllListeners();
   }
 
   /// Provides a [Stream] of values for the given [key].
@@ -284,7 +280,7 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   ///   - Duration
   ///   - Enum (requires providing [enumValues])
   Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
-    if(enumValues != null) checkEnumType<E>(enumValues);
+    if (enumValues != null) checkEnumType<E>(enumValues);
     final E? itemValue = await get<E>(key, enumValues: enumValues);
     yield itemValue;
 
@@ -304,5 +300,24 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
     yield* controller.stream;
     // Defensive close call. Almost never reached because the stream is closed on cancel.
     await controller.close(); // coverage:ignore-line
+  }
+
+  @override
+  Future<void> close() async {
+    removeAllListeners();
+    await backend.close();
+    await super.close();
+  }
+
+  @override
+  Future<void> clear() async {
+    final encodedKeys = await getEncodedKeys();
+    final decodedKeys = encodedKeys.map(decodeKey).toList();
+    await backend.removeAll(encodedKeys);
+    for (final key in decodedKeys) {
+      notifyKeyListeners(key);
+    }
+    notifyListeners();
+    removeAllListeners();
   }
 }

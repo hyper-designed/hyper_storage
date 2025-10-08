@@ -244,4 +244,19 @@ abstract class _HyperStorageImpl extends BaseStorage
     await backend.setStringList(key, value);
     notifyListeners(key);
   }
+
+  @override
+  Future<void> setBytes(String key, Uint8List bytes) async {
+    validateKey(key);
+    await backend.setString(key, base64Encode(bytes));
+    notifyListeners(key);
+  }
+
+  @override
+  Future<Uint8List?> getBytes(String key) async {
+    validateKey(key);
+    final String? base64String = await backend.getString(key);
+    if (base64String == null) return null;
+    return base64Decode(base64String);
+  }
 }
