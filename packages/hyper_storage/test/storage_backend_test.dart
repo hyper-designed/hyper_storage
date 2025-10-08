@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
@@ -314,6 +316,51 @@ void main() {
       });
     });
 
+    group('bytes operations', () {
+      test('setBytes stores bytes as base64 string', () async {
+        final bytes = Uint8List.fromList([1, 2, 3, 4, 5]);
+        await backend.setBytes('data', bytes);
+        final stored = await backend.getString('data');
+        expect(stored, isNotNull);
+        expect(stored, 'AQIDBAU='); // base64 encoding of [1,2,3,4,5]
+      });
+
+      test('getBytes retrieves bytes', () async {
+        final bytes = Uint8List.fromList([255, 128, 64, 32, 16, 8, 4, 2, 1, 0]);
+        await backend.setBytes('data', bytes);
+        final result = await backend.getBytes('data');
+        expect(result, bytes);
+      });
+
+      test('getBytes returns null for non-existent key', () async {
+        expect(await backend.getBytes('missing'), null);
+      });
+
+      test('setBytes and getBytes with empty bytes', () async {
+        final bytes = Uint8List(0);
+        await backend.setBytes('empty', bytes);
+        final result = await backend.getBytes('empty');
+        expect(result, bytes);
+        expect(result!.length, 0);
+      });
+
+      test('setBytes and getBytes with all byte values', () async {
+        final bytes = Uint8List.fromList(List.generate(256, (i) => i));
+        await backend.setBytes('allBytes', bytes);
+        final result = await backend.getBytes('allBytes');
+        expect(result, bytes);
+        expect(result!.length, 256);
+      });
+
+      test('setBytes and getBytes with large byte array', () async {
+        final bytes = Uint8List.fromList(List.generate(100000, (i) => i % 256));
+        await backend.setBytes('large', bytes);
+        final result = await backend.getBytes('large');
+        expect(result, bytes);
+        expect(result!.length, 100000);
+      });
+    });
+
     group('generic get method', () {
       test('get<String> retrieves string', () async {
         await backend.setString('key', 'value');
@@ -378,6 +425,18 @@ void main() {
         final result = await backend.get<TestEnum>('enumKey', enumValues: TestEnum.values);
         expect(result, isNull);
       });
+
+      test('get<Uint8List> retrieves bytes', () async {
+        final bytes = Uint8List.fromList([10, 20, 30, 40, 50]);
+        await backend.setBytes('bytesKey', bytes);
+        final result = await backend.get<Uint8List>('bytesKey');
+        expect(result, bytes);
+      });
+
+      test('get<Uint8List> returns null for non-existent key', () async {
+        final result = await backend.get<Uint8List>('missing');
+        expect(result, isNull);
+      });
     });
 
     group('generic set method', () {
@@ -439,6 +498,12 @@ void main() {
         await backend.set('enumKey', TestEnum.beta);
         expect(await backend.getString('enumKey'), 'beta');
         expect(await backend.getEnum('enumKey', TestEnum.values), TestEnum.beta);
+      });
+
+      test('set with Uint8List value', () async {
+        final bytes = Uint8List.fromList([100, 200, 255, 0, 128]);
+        await backend.set('bytesKey', bytes);
+        expect(await backend.getBytes('bytesKey'), bytes);
       });
     });
 

@@ -238,8 +238,8 @@ abstract class StorageContainer extends BaseStorage {
   /// See also:
   /// - [decodeKey] for the reverse operation
   /// - [validateKey] which is called automatically
-  @protected
   @visibleForTesting
+  @protected
   @internal
   String encodeKey(String key) {
     validateKey(key);
@@ -262,8 +262,8 @@ abstract class StorageContainer extends BaseStorage {
   /// See also:
   /// - [encodeKey] for the reverse operation
   /// - [isAssociatedKey] for checking if a key belongs to this container
-  @protected
   @visibleForTesting
+  @protected
   @internal
   String decodeKey(String key) =>
       key.startsWith('$name$delimiter') ? key.substring(name.length + delimiter.length) : key;
@@ -289,7 +289,8 @@ abstract class StorageContainer extends BaseStorage {
   bool isAssociatedKey(String rawKey) {
     if (name.isEmpty) throw StateError('Container name cannot be empty when checking associated keys.');
     if (name.trim().isEmpty) {
-      throw StateError('Container name cannot be only whitespace when checking associated keys.');
+      // Defensive check; should never happen due to constructor validation.
+      throw StateError('Container name cannot be only whitespace when checking associated keys.'); // coverage:ignore-line
     }
     return rawKey.startsWith('$name$delimiter');
   }

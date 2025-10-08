@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
@@ -303,6 +305,40 @@ void main() {
         expect(retrieved, list);
       });
 
+      test('setBytes and getBytes', () async {
+        final storage = HyperStorage.instance;
+        final bytes = Uint8List.fromList([1, 2, 3, 4, 5, 255, 128, 0]);
+        await storage.setBytes('data', bytes);
+
+        final retrieved = await storage.getBytes('data');
+        expect(retrieved, bytes);
+      });
+
+      test('getBytes returns null for non-existent key', () async {
+        final storage = HyperStorage.instance;
+        expect(await storage.getBytes('nonExistent'), isNull);
+      });
+
+      test('setBytes and getBytes with empty bytes', () async {
+        final storage = HyperStorage.instance;
+        final bytes = Uint8List(0);
+        await storage.setBytes('empty', bytes);
+
+        final retrieved = await storage.getBytes('empty');
+        expect(retrieved, bytes);
+        expect(retrieved!.length, 0);
+      });
+
+      test('setBytes and getBytes with large byte array', () async {
+        final storage = HyperStorage.instance;
+        final bytes = Uint8List.fromList(List.generate(10000, (i) => i % 256));
+        await storage.setBytes('large', bytes);
+
+        final retrieved = await storage.getBytes('large');
+        expect(retrieved, bytes);
+        expect(retrieved!.length, 10000);
+      });
+
       test('setJson and getJson', () async {
         final storage = HyperStorage.instance;
         final json = {'name': 'John', 'age': 30, 'active': true};
@@ -513,6 +549,22 @@ void main() {
 
         storage.removeAllListeners();
         expect(storage.hasListeners, false);
+      });
+    });
+
+    group('key encoding', () {
+      setUp(() async {
+        await HyperStorage.initMocked();
+      });
+
+      test('encodeKey returns key unchanged', () async {
+        final storage = HyperStorage.instance;
+
+        // HyperStorage should not encode keys - they should remain unchanged
+        expect(storage.encodeKey('myKey'), 'myKey');
+        expect(storage.encodeKey('user_123'), 'user_123');
+        expect(storage.encodeKey('config-setting'), 'config-setting');
+        expect(storage.encodeKey('some.key.with.dots'), 'some.key.with.dots');
       });
     });
 
@@ -938,6 +990,17 @@ void main() {
         await Future.delayed(Duration(milliseconds: 50));
         await enumSub.cancel();
         expect(enumValues, contains(StorageTestEnum.success));
+
+        // Test with bytes
+        final bytes = Uint8List.fromList([10, 20, 30, 40, 50]);
+        await storage.setBytes('bytesKey', bytes);
+        final bytesStream = storage.stream<Uint8List>('bytesKey');
+        final bytesValues = <Uint8List?>[];
+        final bytesSub = bytesStream.listen(bytesValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await bytesSub.cancel();
+        expect(bytesValues.length, greaterThan(0));
+        expect(bytesValues.first, bytes);
       });
 
       test('stream() updates enum values', () async {

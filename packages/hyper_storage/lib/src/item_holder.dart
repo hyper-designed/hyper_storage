@@ -281,7 +281,6 @@ mixin ItemHolderMixin on BaseStorage {
   /// ```
   @internal
   @protected
-  @visibleForTesting
   void validateKey(String key);
 
   /// Creates an item holder for storing a single serializable object at the specified key.

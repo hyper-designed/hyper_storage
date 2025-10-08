@@ -165,6 +165,7 @@ await storage.setInt('age', 30);
 await storage.setBool('isDeveloper', true);
 await storage.setDouble('height', 1.75);
 await storage.setStringList('skills', ['Dart', 'Flutter', 'JavaScript']);
+await storage.setBytes('data', Uint8List.fromList([1, 2, 3, 4, 5]));
 ```
 
 ### Getting Data
@@ -175,6 +176,7 @@ final int? age = await storage.getInt('age');
 final bool? isDeveloper = await storage.getBool('isDeveloper');
 final double? height = await storage.getDouble('height');
 final List<String>? skills = await storage.getStringList('skills');
+final Uint8List? data = await storage.getBytes('data');
 ```
 
 ## JSON Data

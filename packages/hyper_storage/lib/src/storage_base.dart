@@ -21,6 +21,19 @@ abstract class _HyperStorageImpl extends BaseStorage
   ///     backend should already be initialized before creating this instance.
   _HyperStorageImpl({required super.backend});
 
+  @internal
+  @protected
+  @override
+  void validateKey(String key) {
+    if (key.isEmpty) throw ArgumentError('Key cannot be empty');
+    if (key.trim().isEmpty) throw ArgumentError('Key cannot be only whitespace');
+  }
+
+  @internal
+  @protected
+  @override
+  String encodeKey(String key) => key;
+
   /// Validates that all keys in a collection are acceptable for storage operations.
   ///
   /// This method validates multiple keys using [validateKey]. If the iterable
@@ -46,19 +59,6 @@ abstract class _HyperStorageImpl extends BaseStorage
     for (final key in keys) {
       validateKey(key);
     }
-  }
-
-  @override
-  @internal
-  @protected
-  String encodeKey(String key) => key;
-
-  @override
-  @internal
-  @protected
-  void validateKey(String key) {
-    if (key.isEmpty) throw ArgumentError('Key cannot be empty');
-    if (key.trim().isEmpty) throw ArgumentError('Key cannot be only whitespace');
   }
 
   @override

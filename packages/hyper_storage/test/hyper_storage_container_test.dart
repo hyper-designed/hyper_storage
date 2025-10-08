@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
@@ -17,6 +19,41 @@ void main() {
     tearDown(() async {
       await container.close();
       await backend.close();
+    });
+
+    group('key encoding', () {
+      test('encodeKey properly encodes with container name and delimiter', () {
+        // Container name is 'test' and default delimiter is '___'
+        expect(container.encodeKey('myKey'), 'test___myKey');
+        expect(container.encodeKey('user'), 'test___user');
+        expect(container.encodeKey('config-setting'), 'test___config-setting');
+      });
+
+      test('encodeKey uses custom delimiter when provided', () async {
+        final customContainer = HyperStorageContainer(
+          backend: backend,
+          name: 'custom',
+          delimiter: '|||',
+        );
+
+        expect(customContainer.encodeKey('myKey'), 'custom|||myKey');
+        expect(customContainer.encodeKey('data'), 'custom|||data');
+
+        await customContainer.close();
+      });
+
+      test('different containers encode differently', () async {
+        final container1 = HyperStorageContainer(backend: backend, name: 'users');
+        final container2 = HyperStorageContainer(backend: backend, name: 'settings');
+
+        // Same key should be encoded differently for different containers
+        expect(container1.encodeKey('key'), 'users___key');
+        expect(container2.encodeKey('key'), 'settings___key');
+        expect(container1.encodeKey('key'), isNot(equals(container2.encodeKey('key'))));
+
+        await container1.close();
+        await container2.close();
+      });
     });
 
     group('basic operations', () {
@@ -138,6 +175,50 @@ void main() {
         final list = ['hello world', 'test\nline', 'tab\there'];
         await container.setStringList('special', list);
         expect(await container.getStringList('special'), list);
+      });
+    });
+
+    group('Bytes operations', () {
+      test('setBytes and getBytes', () async {
+        final bytes = Uint8List.fromList([1, 2, 3, 4, 5, 255, 128, 0]);
+        await container.setBytes('data', bytes);
+        expect(await container.getBytes('data'), bytes);
+      });
+
+      test('getBytes returns null for non-existent key', () async {
+        expect(await container.getBytes('nonExistent'), isNull);
+      });
+
+      test('handles empty bytes', () async {
+        final bytes = Uint8List(0);
+        await container.setBytes('empty', bytes);
+        final result = await container.getBytes('empty');
+        expect(result, bytes);
+        expect(result!.length, 0);
+      });
+
+      test('handles all byte values 0-255', () async {
+        final bytes = Uint8List.fromList(List.generate(256, (i) => i));
+        await container.setBytes('allBytes', bytes);
+        final result = await container.getBytes('allBytes');
+        expect(result, bytes);
+        expect(result!.length, 256);
+      });
+
+      test('handles large byte array', () async {
+        final bytes = Uint8List.fromList(List.generate(50000, (i) => i % 256));
+        await container.setBytes('large', bytes);
+        final result = await container.getBytes('large');
+        expect(result, bytes);
+        expect(result!.length, 50000);
+      });
+
+      test('overwrites existing bytes', () async {
+        final bytes1 = Uint8List.fromList([1, 2, 3]);
+        final bytes2 = Uint8List.fromList([4, 5, 6, 7, 8]);
+        await container.setBytes('data', bytes1);
+        await container.setBytes('data', bytes2);
+        expect(await container.getBytes('data'), bytes2);
       });
     });
 
@@ -475,6 +556,12 @@ void main() {
         await container.setJson('key', map);
         expect(await container.getJson('key'), map);
       });
+
+      test('get<Uint8List> works', () async {
+        final bytes = Uint8List.fromList([10, 20, 30, 40, 50]);
+        await container.setBytes('key', bytes);
+        expect(await container.getBytes('key'), bytes);
+      });
     });
 
     group('stream', () {
@@ -578,6 +665,17 @@ void main() {
         await Future.delayed(Duration(milliseconds: 50));
         await enumSub.cancel();
         expect(enumValues, contains(ContainerTestEnum.bar));
+
+        // Test with bytes
+        final bytes = Uint8List.fromList([1, 2, 3, 4, 5]);
+        await container.setBytes('bytesKey', bytes);
+        final bytesStream = container.stream<Uint8List>('bytesKey');
+        final bytesValues = <Uint8List?>[];
+        final bytesSub = bytesStream.listen(bytesValues.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await bytesSub.cancel();
+        expect(bytesValues.length, greaterThan(0));
+        expect(bytesValues.first, bytes);
       });
 
       test('stream() updates enum values', () async {
