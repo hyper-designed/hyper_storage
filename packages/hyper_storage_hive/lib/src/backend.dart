@@ -45,6 +45,10 @@ class HiveBackend extends StorageBackend {
   @override
   Future<void> init() async => _box ??= await Hive.openBox(name);
 
+  Future<void> _ensureBoxOpen() async {
+    if (_box case Box(isOpen: false)) _box = await Hive.openBox(name);
+  }
+
   @override
   Future<HyperStorageContainer> container(String name, {String? delimiter}) async {
     final backend = HiveBackend(boxName: name);
@@ -53,47 +57,84 @@ class HiveBackend extends StorageBackend {
   }
 
   @override
-  Future<void> setString(String key, String value) => box.put(key, value);
+  Future<void> setString(String key, String value) async {
+    await _ensureBoxOpen();
+    return box.put(key, value);
+  }
 
   @override
-  Future<String?> getString(String key) async => box.get(key);
+  Future<String?> getString(String key) async {
+    await _ensureBoxOpen();
+    return box.get(key);
+  }
 
   @override
-  Future<void> setBool(String key, bool value) => box.put(key, value);
+  Future<void> setBool(String key, bool value) async {
+    await _ensureBoxOpen();
+    return box.put(key, value);
+  }
 
   @override
-  Future<bool?> getBool(String key) async => box.get(key);
+  Future<bool?> getBool(String key) async {
+    await _ensureBoxOpen();
+    return box.get(key);
+  }
 
   @override
-  Future<void> setDouble(String key, double value) => box.put(key, value);
+  Future<void> setDouble(String key, double value) async {
+    await _ensureBoxOpen();
+    return box.put(key, value);
+  }
 
   @override
-  Future<double?> getDouble(String key) async => box.get(key);
+  Future<double?> getDouble(String key) async {
+    await _ensureBoxOpen();
+    return box.get(key);
+  }
 
   @override
-  Future<void> setInt(String key, int value) => box.put(key, value);
+  Future<void> setInt(String key, int value) async {
+    await _ensureBoxOpen();
+    return box.put(key, value);
+  }
 
   @override
-  Future<int?> getInt(String key) async => await box.get(key);
+  Future<int?> getInt(String key) async {
+    await _ensureBoxOpen();
+    return box.get(key);
+  }
 
   @override
   Future<Map<String, dynamic>> getAll(Set<String> allowList) async {
+    await _ensureBoxOpen();
     final data = <String, dynamic>{...box.toMap()};
     if (allowList.isEmpty) return {};
     return data..removeWhere((key, value) => !allowList.contains(key));
   }
 
   @override
-  Future<Set<String>> getKeys() async => box.keys.map((key) => key.toString()).toSet();
+  Future<Set<String>> getKeys() async {
+    await _ensureBoxOpen();
+    return box.keys.map((key) => key.toString()).toSet();
+  }
 
   @override
-  Future<void> remove(String key) => box.delete(key);
+  Future<void> remove(String key) async {
+    await _ensureBoxOpen();
+    return box.delete(key);
+  }
 
   @override
-  Future<void> removeAll(Iterable<String> keys) => box.deleteAll(keys);
+  Future<void> removeAll(Iterable<String> keys) async {
+    await _ensureBoxOpen();
+    return box.deleteAll(keys);
+  }
 
   @override
-  Future<bool> containsKey(String key) async => box.containsKey(key);
+  Future<bool> containsKey(String key) async {
+    await _ensureBoxOpen();
+    return box.containsKey(key);
+  }
 
   @override
   Future<void> clear() => Hive.deleteFromDisk();
