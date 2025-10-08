@@ -2,6 +2,7 @@ import 'package:hyper_storage/hyper_storage.dart';
 import 'package:test/test.dart';
 
 enum TestEnum { a, b, c }
+
 enum ShortEnum { x, y }
 
 void main() {
@@ -90,11 +91,13 @@ void main() {
           'enumKey',
           enumValues: ShortEnum.values,
         ),
-        throwsA(isA<ArgumentError>().having(
-          (e) => e.message,
-          'message',
-          contains('already exists with a different type'),
-        )),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('already exists with a different type'),
+          ),
+        ),
       );
     });
 
