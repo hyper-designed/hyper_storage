@@ -1162,8 +1162,41 @@ void main() {
         expect(values2, contains('value2'));
         expect(values2, isNot(contains('updated1')));
       });
+
+      test('stream() handles errors during value retrieval', () async {
+        // Create a backend that will throw an error
+        final errorBackend = ErrorThrowingBackend();
+        final storage = await HyperStorage.newInstance(backend: errorBackend);
+
+        final stream = storage.stream<String>('errorKey');
+        final errors = <Object>[];
+
+        final subscription = stream.listen(
+          (_) {},
+          onError: errors.add,
+        );
+
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(errors, isNotEmpty);
+        expect(errors.first, isA<Exception>());
+
+        await storage.close();
+      });
     });
   });
+}
+
+// Backend that throws errors for testing error handling
+class ErrorThrowingBackend extends InMemoryBackend {
+  @override
+  Future<String?> getString(String key) async {
+    if (key == 'errorKey') {
+      throw Exception('Test error during getString');
+    }
+    return super.getString(key);
+  }
 }
 
 // Custom container implementation for testing objectContainer

@@ -808,6 +808,41 @@ void main() {
         await container2.close();
         await backend2.close();
       });
+
+      test('stream() handles errors during value retrieval', () async {
+        // Create a backend that will throw an error
+        final errorBackend = ContainerErrorThrowingBackend();
+        await errorBackend.init();
+        final errorContainer = HyperStorageContainer(backend: errorBackend, name: 'test');
+
+        final stream = errorContainer.stream<String>('errorKey');
+        final errors = <Object>[];
+
+        final subscription = stream.listen(
+          (_) {},
+          onError: errors.add,
+        );
+
+        await Future.delayed(Duration(milliseconds: 50));
+        await subscription.cancel();
+
+        expect(errors, isNotEmpty);
+        expect(errors.first, isA<Exception>());
+
+        await errorContainer.close();
+        await errorBackend.close();
+      });
     });
   });
+}
+
+// Backend that throws errors for testing error handling in containers
+class ContainerErrorThrowingBackend extends InMemoryBackend {
+  @override
+  Future<String?> getString(String key) async {
+    if (key.endsWith('errorKey')) {
+      throw Exception('Test error during getString in container');
+    }
+    return super.getString(key);
+  }
 }
