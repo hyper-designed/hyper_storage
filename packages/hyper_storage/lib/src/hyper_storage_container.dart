@@ -282,20 +282,25 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   ///   - Enum (requires providing [enumValues])
   Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
     if (enumValues != null) checkEnumType<E>(enumValues);
-    final E? itemValue = await get<E>(key, enumValues: enumValues);
-    yield itemValue;
 
     final controller = StreamController<E?>();
 
-    void retrieveAndAdd() async {
+    Future<void> retrieveAndAdd() async {
       if (controller.isClosed) return;
-      final E? value = await get<E>(key, enumValues: enumValues);
-      if (!controller.isClosed) controller.add(value);
+      try {
+        final E? value = await get<E>(key, enumValues: enumValues);
+        if (!controller.isClosed) controller.add(value);
+      } catch (error, stacktrace) {
+        if (!controller.isClosed) controller.addError(error, stacktrace);
+        return;
+      }
     }
 
     addKeyListener(key, retrieveAndAdd);
 
     try {
+      // Reads and emits the initial value.
+      await retrieveAndAdd();
       yield* controller.stream;
     } finally {
       removeKeyListener(key, retrieveAndAdd);
