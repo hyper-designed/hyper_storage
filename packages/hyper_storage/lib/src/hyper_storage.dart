@@ -390,10 +390,13 @@ class HyperStorage extends _HyperStorageImpl {
   /// The stream will emit the current value of the key and will update
   /// whenever the value changes.
   ///
-  /// It is important to close the stream when it is no longer needed
-  /// to avoid memory leaks.
+  /// If an error occurs during value retrieval (either initial or on updates),
+  /// the error will be emitted to the stream. Listeners should provide an
+  /// [onError] callback to handle such errors gracefully.
   ///
-  /// This can be done by cancelling the subscription to the stream.
+  /// It is important to close the stream when it is no longer needed
+  /// to avoid memory leaks. This can be done by cancelling the subscription
+  /// to the stream.
   ///
   /// Note that only supported types are allowed for [E].
   /// Supported types are:
