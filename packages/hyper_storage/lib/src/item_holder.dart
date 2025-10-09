@@ -297,6 +297,11 @@ mixin ItemHolderMixin on BaseStorage {
   /// be serializable to/from JSON using the provided [toJson] and [fromJson]
   /// functions.
   ///
+  /// Note: Calling this method with the same key multiple times will return
+  /// the same instance of [JsonItemHolder] if it already exists, ensuring that
+  /// there is only one holder per key. If the existing holder has been closed,
+  /// a new instance will be created.
+  ///
   /// Parameters:
   ///   - [key]: The key under which to store the object. Must be non-empty and
   ///     not only whitespace. This key is relative to the container (not
@@ -352,6 +357,11 @@ mixin ItemHolderMixin on BaseStorage {
   /// be serializable using the provided [serialize] and [deserialize]
   /// functions.
   ///
+  /// Note: Calling this method with the same key multiple times will return
+  /// the same instance of [JsonItemHolder] if it already exists, ensuring that
+  /// there is only one holder per key. If the existing holder has been closed,
+  /// a new instance will be created.
+  ///
   /// Parameters:
   ///   - [key]: The key under which to store the object. Must be non-empty and not only whitespace.
   ///     This key is relative to the container.
@@ -399,6 +409,11 @@ mixin ItemHolderMixin on BaseStorage {
   /// [ItemHolder] provides a convenient API for managing a single item/key in the storage/container.
   /// This makes it easier to pass around a fragment of the storage (without needing to reference
   /// the entire storage/container) that knows how perform operations on that specific key.
+  ///
+  /// Note: Calling this method with the same key multiple times will return
+  /// the same instance of [JsonItemHolder] if it already exists, ensuring that
+  /// there is only one holder per key. If the existing holder has been closed,
+  /// a new instance will be created.
   ///
   /// Type parameter [E] specifies the type of item to store. Supported types include:
   /// - String
@@ -477,6 +492,11 @@ mixin ItemHolderMixin on BaseStorage {
   /// This method allows you to create an [ItemHolder] of any type by providing
   /// a factory function that constructs the holder. This is useful for creating
   /// specialized holders that may have custom behavior or serialization logic.
+  ///
+  /// Note: Calling this method with the same key multiple times will return
+  /// the same instance of [JsonItemHolder] if it already exists, ensuring that
+  /// there is only one holder per key. If the existing holder has been closed,
+  /// a new instance will be created.
   ///
   /// Parameters:
   ///   - [key]: The key under which to store the item. Must be non-empty and not only whitespace.
