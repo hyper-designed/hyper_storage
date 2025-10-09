@@ -413,24 +413,21 @@ class HyperStorage extends _HyperStorageImpl {
     final E? itemValue = await get<E>(key, enumValues: enumValues);
     yield itemValue;
 
-    late final void Function() retrieveAndAdd;
-    final controller = StreamController<E?>(
-      onCancel: () => removeKeyListener(key, retrieveAndAdd),
-    );
+    final controller = StreamController<E?>();
 
-    retrieveAndAdd = () async {
+    void retrieveAndAdd() async {
       if (controller.isClosed) return;
       final E? value = await get<E>(key, enumValues: enumValues);
-      if (!controller.isClosed) {
-        controller.add(value);
-      }
-    };
+      if (!controller.isClosed) controller.add(value);
+    }
 
     addKeyListener(key, retrieveAndAdd);
 
-    yield* controller.stream;
-
-    // Defensive close call. Almost never reached because the stream is closed on cancel.
-    await controller.close(); // coverage:ignore-line
+    try {
+      yield* controller.stream;
+    } finally {
+      removeKeyListener(key, retrieveAndAdd);
+      await controller.close();
+    }
   }
 }
