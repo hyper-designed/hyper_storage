@@ -73,9 +73,11 @@ abstract class StorageBackend with GenericStorageOperationsMixin implements Stor
 
   @override
   Future<void> setAll(Map<String, dynamic> values) async {
-    for (final MapEntry(:key, :value) in values.entries) {
-      set(key, value);
-    }
+    if (values.isEmpty) return;
+    final List<Future<void>> writes = <Future<void>>[
+      for (final MapEntry(:key, :value) in values.entries) set(key, value),
+    ];
+    await Future.wait(writes);
   }
 
   @override

@@ -23,7 +23,8 @@ class SharedPreferencesBackend extends StorageBackend {
   /// Optionally accepts an existing [SharedPreferencesAsync] instance for
   /// dependency injection or custom configuration.
   ///
-  /// If none is provided, a new instance will be created during [init].
+  /// If none is provided, a new instance is created immediately, so additional
+  /// initialization is not required before use.
   SharedPreferencesBackend([SharedPreferencesAsync? prefs]) : _prefs = prefs ?? SharedPreferencesAsync();
 
   @override

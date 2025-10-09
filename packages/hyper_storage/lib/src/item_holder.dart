@@ -45,8 +45,9 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   /// If not provided, the default backend's get method will be used.
   /// This allows for flexibility in how items are retrieved.
   ///
-  /// If either getter or setter is provided, both must be provided.
-  /// This ensures that the item can be both retrieved and stored correctly.
+  /// When overriding access behaviour, provide both getter and setter so the
+  /// holder can read and write symmetrically. If either callback is omitted,
+  /// the corresponding backend default will be used.
   final ItemGetter<E>? getter;
 
   /// Custom setter function to store the item in the backend.
@@ -54,8 +55,9 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   /// If not provided, the default backend's set method will be used.
   /// This allows for flexibility in how items are stored.
   ///
-  /// If either getter or setter is provided, both must be provided.
-  /// This ensures that the item can be both retrieved and stored correctly.
+  /// When overriding access behaviour, provide both getter and setter so the
+  /// holder can read and write symmetrically. If either callback is omitted,
+  /// the corresponding backend default will be used.
   final ItemSetter<E>? setter;
 
   final StreamController<E?> _streamController = StreamController<E?>.broadcast();
@@ -305,8 +307,7 @@ mixin ItemHolderMixin on BaseStorage {
   ///     map. This is called when storing the object.
   ///
   /// Returns:
-  ///   A [Future] that completes with a [JsonItemHolder] configured to
-  ///   manage the object at the specified key.
+  ///   A [JsonItemHolder] configured to manage the object at the specified key.
   ///
   /// Throws:
   ///   * [ArgumentError] if the key is invalid (empty or only whitespace)
@@ -409,6 +410,7 @@ mixin ItemHolderMixin on BaseStorage {
   /// - List of String
   /// - JSON Map
   /// - List of JSON Maps
+  /// - Uint8List
   /// - Enum (requires providing [enumValues] unless custom getter/setter supplied)
   ///
   /// Parameters:

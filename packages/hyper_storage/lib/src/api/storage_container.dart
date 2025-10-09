@@ -63,8 +63,9 @@ abstract class StorageContainer extends BaseStorage {
   /// The default delimiter to use if one is not provided.
   ///
   /// When creating a container without specifying a delimiter, this default
-  /// value ("___") is used. The dot character is chosen as it's commonly used
-  /// for namespacing and is unlikely to appear in most keys.
+  /// value ("___") is used. The triple-underscore sequence is chosen because it
+  /// is unlikely to appear in user-provided keys or container names, providing a
+  /// safe namespace separator.
   static const defaultDelimiter = '___';
 
   /// A regular expression that matches all allowed delimiter characters.

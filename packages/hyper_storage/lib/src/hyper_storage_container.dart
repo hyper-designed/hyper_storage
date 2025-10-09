@@ -278,6 +278,7 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
   ///   - List of JSON Map
   ///   - DateTime
   ///   - Duration
+  ///   - Uint8List
   ///   - Enum (requires providing [enumValues])
   Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
     if (enumValues != null) checkEnumType<E>(enumValues);

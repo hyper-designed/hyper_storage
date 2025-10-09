@@ -17,7 +17,7 @@ class LazyHiveBackend extends StorageBackend {
   /// The underlying Hive box instance, or null if not yet initialized.
   LazyBox? _box;
 
-  /// The active Hive [Box] instance used for storage operations.
+  /// The active Hive [LazyBox] instance used for storage operations.
   LazyBox get box => _box ?? (throw StateError('HiveBackend not initialized. Call init() first.'));
 
   /// Creates a new [LazyHiveBackend] instance with optional named box support.
