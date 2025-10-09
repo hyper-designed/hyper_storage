@@ -17,7 +17,7 @@ Make sure to call `WidgetsFlutterBinding.ensureInitialized()` before initializin
 ```dart
 import 'package:flutter/material.dart';
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_storage_secure/hyper_storage_secure_backend.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +64,8 @@ class MyApp extends StatelessWidget {
 
 Once initialized, you can use `hyper_storage` to securely store and retrieve sensitive information like API keys, tokens, and passwords.
 
-**Note:** `hyper_storage_secure` only supports storing `String` values. Other types will be converted to a `String` before being stored. When you retrieve the data, you will get a `String` back.
+**Note:** Values are persisted as strings under the hood, and the backend provides helpers to parse them back into
+common Dart primitives.
 
 ### Storing Data
 
@@ -88,8 +89,9 @@ You can pass platform-specific options to the `SecureStorageBackend` constructor
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final backend = SecureStorageBackend(
-  aOptions: const AndroidOptions(
-    encryptedSharedPreferences: true,
+  storage: FlutterSecureStorage(
+    aOptions: const AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: const IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   ),
 );
 

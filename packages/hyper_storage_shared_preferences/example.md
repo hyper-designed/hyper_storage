@@ -86,7 +86,7 @@ final reminders = await storage.getStringList('reminders');
 You can also use named containers to organize your data.
 
 ```dart
-final profileSettings = await HyperStorage.container('profile');
+final profileSettings = await storage.container('profile');
 await profileSettings.set('username', 'jane_doe');
 final username = await profileSettings.get('username');
 ```

@@ -40,7 +40,7 @@ Initialize `hyper_storage` with `SecureStorageBackend`.
 ```dart
 import 'package:flutter/material.dart';
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_storage_secure/hyper_storage_secure_backend.dart';
+import 'package:hyper_storage_secure/hyper_storage_secure.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +58,9 @@ void main() async {
 ```
 
 For more detailed examples, please see the [example.md](example.md) file.
+
+If you need to customize platform-specific options, create a configured `FlutterSecureStorage` instance and pass it to
+`SecureStorageBackend` via the `storage` parameter.
 
 ## Contributing
 

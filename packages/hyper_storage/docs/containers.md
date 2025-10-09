@@ -28,6 +28,7 @@ returned.
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
 
 void main() async {
     final storage = await HyperStorage.init(backend: SharedPreferencesBackend());
@@ -61,11 +62,15 @@ Containers also support storing and retrieving JSON serializable objects. You ca
 store complex data structures in a structured way. For example, storing a list of Todo items with `Todo` class.
 
 ```dart
-final todoContainer = await storage.jsonContainer<Todo>('todos');
+final todos = await storage.jsonSerializableContainer<Todo>(
+  'todos',
+  fromJson: Todo.fromJson,
+  toJson: (todo) => todo.toJson(),
+);
 
-await todoContainer.set('task1', Todo(id: 'task1', title: 'Buy groceries', isCompleted: false));
-final todo = await todoContainer.get('task1');
-await todoContainer.remove('task1');
+await todos.set('task1', Todo(id: 'task1', title: 'Buy groceries', isCompleted: false));
+final todo = await todos.get('task1');
+await todos.remove('task1');
 ```
 
 ### Providing a custom ID
@@ -74,14 +79,16 @@ By default, serializable containers would generate a unique String ID for each o
 also provide a custom ID by providing a `idGetter` function when creating the container.
 
 ```dart
-final todoContainer = await storage.jsonContainer<Todo>(
+final todos = await storage.jsonSerializableContainer<Todo>(
   'todos',
+  fromJson: Todo.fromJson,
+  toJson: (todo) => todo.toJson(),
   idGetter: (todo) => todo.id,
 );
 
-await todoContainer.add(Todo(id: 't1', title: 'Buy groceries', isCompleted: false));
-await todoContainer.get('t1');
-await todoContainer.remove('t1');
+await todos.add(Todo(id: 't1', title: 'Buy groceries', isCompleted: false));
+await todos.get('t1');
+await todos.remove('t1');
 ```
 
 ## Custom Serializable Containers
@@ -92,34 +99,55 @@ and deserialization logic.
 
 ```dart
 class XmlSerializableContainer<E extends Object> extends SerializableStorageContainer<E> {
-  XmlSerializableContainer({super.backend, super.name});
+  XmlSerializableContainer({
+    required super.backend,
+    required super.name,
+    super.delimiter,
+  });
 
   @override
   E deserialize(String value) {
-    // Implement your XML deserialization logic here
-    // For example, using an XML parsing library to convert XML string to object
-    throw UnimplementedError();
+    // Convert the stored XML string back into your object type
+    return parseXml<E>(value);
   }
 
   @override
   String serialize(E value) {
-    // Implement your XML serialization logic here
-    // For example, using an XML building library to convert object to XML string
-    throw UnimplementedError();
+    // Convert your object into an XML string for storage
+    return toXml(value);
   }
 }
+
+// Helper functions that convert between your XML representation and the Dart object.
+E parseXml<E>(String xml) => throw UnimplementedError();
+String toXml(Object value) => throw UnimplementedError();
+
+// Register the custom container with Hyper Storage
+final posts = await storage.objectContainer<Post, XmlSerializableContainer<Post>>(
+  'posts',
+  factory: () => XmlSerializableContainer<Post>(
+    backend: storage.backend,
+    name: 'posts',
+  ),
+);
+
+// storage.backend exposes the underlying backend instance that Hyper Storage uses internally.
 ```
 
 ## Container Delimiter
 
 The way containers are implemented is by prefixing the keys with the container name followed by a delimiter. 
-By default, the delimiter is a dot (`___`). For example, if you have a container named `settings` and you store a key
+By default, the delimiter is a triple underscore (`___`). For example, if you have a container named `settings` and you store a key
 `theme` with value `dark`, the actual key stored in the backend would be `settings___theme`.
 
 This is done to isolate the keys into a namespace, preventing key collisions between different containers. You can
-change the delimiter by providing a custom delimiter when initializing Hyper Storage.
+change the delimiter for serializable containers by providing the `delimiter` argument when creating them.
 
 ```dart
-// Create a storage instance with a custom delimiter.
-final storage = await storage.container('todos', delimiter: '--');
+final todos = await storage.jsonSerializableContainer<Todo>(
+  'todos',
+  fromJson: Todo.fromJson,
+  toJson: (todo) => todo.toJson(),
+  delimiter: '--',
+);
 ```

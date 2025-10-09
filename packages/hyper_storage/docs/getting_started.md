@@ -42,15 +42,40 @@ More backends are available in separate packages:
 
 See the [Backends Documentation](backends.md) for more details.
 
+## Initialization
+
+You can initialize `hyper_storage` with any storage backend that implements the `StorageBackend` interface. Always pass
+the backend you want to use to `HyperStorage.init`.
+
+### In-memory (for tests or ephemeral data)
+
+```dart
+import 'package:hyper_storage/hyper_storage.dart';
+
+final storage = await HyperStorage.init(backend: InMemoryBackend());
+```
+
+### Using other backends
+
+Add the desired backend package to your dependencies and provide the backend instance to `init`:
+
+```dart
+import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_storage_hive/hyper_storage_hive.dart';
+
+final storage = await HyperStorage.init(backend: HiveBackend());
+```
+
 ## Usage
 
 Initialize the storage with a backend of your choice.
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
 
 void main() async {
-  // Initialize the storage with InMemoryBackend
+  // Initialize the storage with SharedPreferences
   final storage = await HyperStorage.init(backend: SharedPreferencesBackend());
 
   // Set a value
@@ -138,7 +163,7 @@ final List<Map<String, dynamic>>? items = await storage.getJsonList('items');
 You can use named containers to organize your data.
 
 ```dart
-final container = await HyperStorage.container('account');
+final container = await storage.container('account');
 await container.setString('username', 'john_doe');
 final String? username = await container.getString('username');
 ```
@@ -151,30 +176,29 @@ You can store and retrieve custom objects by providing `toJson` and `fromJson` f
 
 ```dart
 class User {
+  final String id;
   final String name;
-  final int age;
 
-  User({required this.name, required this.age});
+  User({required this.id, required this.name});
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(name: json['name'], age: json['age']);
-  }
+  factory User.fromJson(Map<String, dynamic> json) => User(
+        id: json['id'] as String,
+        name: json['name'] as String,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {'name': name, 'age': age};
-  }
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
-final storage = await HyperStorage.objectContainer<User>(
+final users = await storage.jsonSerializableContainer<User>(
   'users',
-  toJson: (user) => user.toJson(),
   fromJson: User.fromJson,
+  toJson: (user) => user.toJson(),
+  idGetter: (user) => user.id,
 );
 
-await storage.set('user1', User(name: 'John', age: 23));
-final User? user = await storage.get('user1');
-final List<User> users = await storage.getValues();
-final Map<String, User> allUsers = await storage.getAll();
+await users.add(User(id: 'user1', name: 'John'));
+final User? user = await users.get('user1');
+final List<User> allUsers = await users.getValues();
 ```
 
 See the [Containers Documentation](containers.md) for more details.

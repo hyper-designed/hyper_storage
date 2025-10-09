@@ -36,7 +36,7 @@ live activities, native runners, etc.
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_storage_shared_preferences/hyper_storage_shared_preferences.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
 
 void main() async {
   final storage = await HyperStorage.init(backend: SharedPreferencesBackend());
@@ -108,7 +108,7 @@ void main() async {
   );
 
   final storage = await HyperStorage.init(
-    backend: SecureStorageBackend(secureStorage: secureStorage),
+    backend: SecureStorageBackend(storage: secureStorage),
   );
 }
 ```
@@ -143,7 +143,7 @@ You can also use multiple backends in your application by creating separate `Hyp
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_storage_shared_preferences/hyper_storage_shared_preferences.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
 import 'package:hyper_storage_hive/hyper_storage_hive.dart';
 
 void main() async {

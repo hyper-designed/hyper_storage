@@ -24,25 +24,47 @@ Then, run `flutter pub get`.
 
 ## Usage
 
-This package provides extension methods on `ItemHolder` to get a `ValueListenable` for any key in your storage.
-
-You can use this with a `ValueListenableBuilder` to automatically rebuild your UI when the data changes.
+This package extends `ItemHolder` with an `asValueNotifier` helper so you can bridge Hyper Storage with Flutter's
+`ValueListenable` APIs.
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:hyper_storage_flutter/hyper_storage_flutter.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final storage = await HyperStorage.init();
+  final storage = await HyperStorage.init(backend: SharedPreferencesBackend());
   runApp(MyApp(storage: storage));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final HyperStorage storage;
 
   const MyApp({super.key, required this.storage});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final ItemHolder<String> _messageHolder;
+  late final ValueNotifier<String?> _messageNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _messageHolder = widget.storage.itemHolder<String>('message');
+    _messageNotifier = _messageHolder.asValueNotifier();
+  }
+
+  @override
+  void dispose() {
+    _messageNotifier.dispose();
+    _messageHolder.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +73,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(title: const Text('Hyper Storage Flutter')),
         body: Center(
           child: ValueListenableBuilder<String?>(
-            valueListenable: storage.listenable('message'),
+            valueListenable: _messageNotifier,
             builder: (context, message, child) {
               return Text(message ?? 'No message yet');
             },
@@ -59,7 +81,8 @@ class MyApp extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            await storage.set('message', 'Hello from Flutter!');
+            final current = await _messageHolder.get() ?? 'Hello';
+            await _messageHolder.set('$current!');
           },
           child: const Icon(Icons.add),
         ),

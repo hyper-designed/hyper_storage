@@ -10,24 +10,46 @@ This file provides examples of how to use the `hyper_storage_flutter` package to
 
 ## Listening to a Single Key
 
-You can use the `listenable` extension method on a `HyperStorage` or `HyperStorageContainer` instance to get a `ValueListenable` for a specific key. This allows you to rebuild your UI automatically whenever the value of that key changes.
+You can use `asValueNotifier` on an `ItemHolder` to obtain a `ValueNotifier` for a specific key. This allows you to rebuild your UI automatically whenever the value of that key changes.
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:hyper_storage_flutter/hyper_storage_flutter.dart';
 
-class CounterScreen extends StatelessWidget {
+class CounterScreen extends StatefulWidget {
   final HyperStorage storage;
 
   const CounterScreen({super.key, required this.storage});
+
+  @override
+  State<CounterScreen> createState() => _CounterScreenState();
+}
+
+class _CounterScreenState extends State<CounterScreen> {
+  late final ItemHolder<int> _counterHolder;
+  late final ValueNotifier<int?> _counterNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _counterHolder = widget.storage.itemHolder<int>('counter');
+    _counterNotifier = _counterHolder.asValueNotifier();
+  }
+
+  @override
+  void dispose() {
+    _counterNotifier.dispose();
+    _counterHolder.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: ValueListenableBuilder<int?>(
-          valueListenable: storage.listenable('counter'),
+          valueListenable: _counterNotifier,
           builder: (context, counter, child) {
             return Text('Counter: ${counter ?? 0}');
           },
@@ -35,8 +57,8 @@ class CounterScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final currentCounter = await storage.getInt('counter') ?? 0;
-          await storage.setInt('counter', currentCounter + 1);
+          final currentCounter = await _counterHolder.get() ?? 0;
+          await _counterHolder.set(currentCounter + 1);
         },
         child: const Icon(Icons.add),
       ),
@@ -47,79 +69,30 @@ class CounterScreen extends StatelessWidget {
 
 ## Listening with a Default Value
 
-The `listenable` method takes an optional `defaultValue` parameter. If you provide a `defaultValue`, the `ValueListenable` will emit this value initially if the key does not exist in the storage.
+You can provide your own default value when rendering the UI. For example:
 
 ```dart
-ValueListenableBuilder<int>(
-  valueListenable: storage.listenable('counter', defaultValue: 0),
+ValueListenableBuilder<int?>(
+  valueListenable: _counterNotifier,
   builder: (context, counter, child) {
-    return Text('Counter: $counter');
+    return Text('Counter: ${counter ?? 0}');
   },
-),
+);
 ```
 
 ## Using with Containers
 
-The `listenable` extension method is also available on `HyperStorageContainer` instances.
+You can call `asValueNotifier` on item holders that originate from containers as well.
 
 ```dart
-import 'package:flutter/material.dart';
-import 'package:hyper_storage/hyper_storage.dart';
-import 'package:hyper_storage_flutter/hyper_storage_flutter.dart';
+final profile = await storage.container('profile');
+final nameHolder = profile.itemHolder<String>('name');
+final nameNotifier = nameHolder.asValueNotifier();
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  late final HyperStorageContainer profileContainer;
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    profileContainer = await HyperStorage.container('profile');
-    final currentName = await profileContainer.getString('name');
-    if (currentName != null) {
-      _controller.text = currentName;
-    }
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            ValueListenableBuilder<String?>(
-              valueListenable: profileContainer.listenable('name'),
-              builder: (context, name, child) {
-                return Text('Current Name: ${name ?? 'Not set'}');
-              },
-            ),
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(labelText: 'New Name'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await profileContainer.setString('name', _controller.text);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+ValueListenableBuilder<String?>(
+  valueListenable: nameNotifier,
+  builder: (context, name, child) {
+    return Text('Current Name: ${name ?? 'Not set'}');
+  },
+);
 ```

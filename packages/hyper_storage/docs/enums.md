@@ -59,7 +59,7 @@ final brightness = await container.getEnum<Brightness>('brightness', Brightness.
 You can also use the generic `get` method to retrieve enums:
 
 ```dart
-final role = await storage.get<Role>('role', Role.values);
+final role = await storage.get<Role>('role', enumValues: Role.values);
 ```
 
 ## Using ItemHolder with Enums
@@ -67,7 +67,10 @@ final role = await storage.get<Role>('role', Role.values);
 You can also use `ItemHolder` to store and retrieve enums. Here's an example:
 
 ```dart
-final roleHolder = storage.itemHolder<Role>('role', Role.values);
+final roleHolder = storage.itemHolder<Role>(
+  'role',
+  enumValues: Role.values,
+);
 
 // Set the enum value
 await roleHolder.set(Role.user);
@@ -81,7 +84,7 @@ final role = await roleHolder.get();
 You can stream changes to enum values using the `stream` method. Here's an example:
 
 ```dart
-final roleStream = storage.stream<Role>('role', Role.values);
+final roleStream = storage.stream<Role>('role', enumValues: Role.values);
 
 roleStream.listen((role) {
   print('Role changed to: $role');
@@ -93,10 +96,12 @@ With containers:
 ```dart
 final container = await storage.container('settings');
 
-final brightnessStream = container.stream<Brightness>('brightness', Brightness.values);
+final brightnessStream = container.stream<Brightness>(
+  'brightness',
+  enumValues: Brightness.values,
+);
 
 brightnessStream.listen((brightness) {
   print('Brightness changed to: $brightness');
 });
 ```
-

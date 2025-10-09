@@ -19,7 +19,7 @@ Item holders make it easy to pass around a single item and use it from multiple 
 
 ```dart
 
-final ItemHolder<int> countHolder = storage.holder<int>('counter');
+final ItemHolder<int> countHolder = storage.itemHolder<int>('counter');
 
 // Reading the value
 final int count = await countHolder.get() ?? 0;
@@ -31,7 +31,7 @@ await countHolder.set(count + 1);
 await countHolder.remove();
 
 // Closing the holder when no longer needed
-await countHolder.dispose();
+countHolder.dispose();
 ```
 
 You must provide a generic type `E` to the `ItemHolder` to specify the type of item it holds.
@@ -47,8 +47,12 @@ The type `E` must be one of the supported types:
 - `List<Map>`
 - `DateTime`
 - `Duration`
+- `Uint8List`
+- `Enum` (provide `enumValues` when not supplying custom getter/setter)
 
 Optionally, you can pass getter and setter functions to provide custom read/write logic for underlying storage.
+
+If you are working with enums, supply the `enumValues` named parameter so the holder can map stored names back to enum values.
 
 
 Calling `storage.itemHolder` multiple times with the same key will return the same instance of `ItemHolder`. Hyper Storage
@@ -63,7 +67,7 @@ If you want to store JSON serializable objects, you can use `JsonItemHolder` whi
 
 ```dart
 
-final JsonItemHolder<User> userHolder = storage.jsonHolder<User>(
+final JsonItemHolder<User> userHolder = storage.jsonItemHolder<User>(
   'user',
   fromJson: (json) => User.fromJson(json),
   toJson: (user) => user.toJson(),
@@ -86,7 +90,7 @@ serialization and deserialization logic for your custom types. Under the hood, i
 
 ```dart
 
-final SerializableItemHolder<User> userHolder = storage.serializableHolder<User>(
+final SerializableItemHolder<User> userHolder = storage.serializableItemHolder<User>(
   'user',
   serialize: (user) => user.toXML(), // Run your serialization logic here and return a String
   deserialize: (data) => User.fromXML(data), // Run your deserialization logic here and return a User object
@@ -112,10 +116,10 @@ class ColorHolder extends ItemHolder<Color> {
   );
 }
 ```
-You can then use your custom item holder by calling the `customHolder` method on the `HyperStorage` instance.
+You can then use your custom item holder by calling the `customItemHolder` method on the `HyperStorage` instance.
 
 ```dart
-final colorHolder = storage.customHolder<ColorHolder, Color>(
+final colorHolder = storage.customItemHolder<ColorHolder, Color>(
     'favorite_color',
     create: (backend, key) => ColorHolder(backend, key),
 );
@@ -136,11 +140,11 @@ final class XMLItemHolder<E extends Object> extends SerializableItemHolder<E> {
 }
 ```
 
-To use your custom item holder, you can call `customHolder` method on `HyperStorage` instance.
+To use your custom item holder, call `customItemHolder` on the `HyperStorage` instance.
 
 ```dart
 
-final userHolder = storage.customHolder<XMLItemHolder<User>, User>(
+final userHolder = storage.customItemHolder<XMLItemHolder<User>, User>(
   'user',
   create: (backend, key) => XMLItemHolder<User>(backend, key),
 );

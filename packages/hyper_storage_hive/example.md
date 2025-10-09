@@ -84,7 +84,7 @@ final user = await storage.getJson('user');
 ### Using Containers
 
 ```dart
-final userSettings = await HyperStorage.container('user_settings');
+final userSettings = await storage.container('user_settings');
 await userSettings.set('theme', 'dark');
 final theme = await userSettings.get('theme');
 ```

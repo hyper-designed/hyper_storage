@@ -59,7 +59,7 @@ final itemHolder = storage.itemHolder<String>('status');
 itemHolder.addListener(onStatusChanged);
 
 void onStatusChanged() async {
-  final newStatus = await itemHolder.get(;
+  final newStatus = await itemHolder.get();
   print('The status has changed to: $newStatus');
 }
 
@@ -103,13 +103,13 @@ container.removeListener(onSettingsChanged);
 Item Holder also supports streaming changes using Dart's `Stream` API. This allows you to listen to changes in a more
 flexible way, such as using `StreamBuilder` in Flutter.
 
-`ItemHolder<E>` implements `Stream<E?>` so you can directly use it as a stream.
+`ItemHolder<E>` implements `Stream<E?>`, so you can listen to it directly.
 
 ```dart
 final itemHolder = storage.itemHolder<String>('status');
 
 // Listen to changes using Stream API
-final subscription = itemHolder.stream.listen((newStatus) {
+final subscription = itemHolder.listen((newStatus) {
     print('The status has changed to: $newStatus');
 });
 
@@ -121,7 +121,7 @@ Using with StreamBuilder in Flutter:
 
 ```dart
 StreamBuilder<String?>(
-  stream: itemHolder.stream,
+  stream: itemHolder,
   builder: (context, snapshot) {
     if (snapshot.connectionState == ConnectionState.waiting) {
       return CircularProgressIndicator();
@@ -143,7 +143,7 @@ You can convert an `ItemHolder` to a `ValueNotifier` for easier integration with
 final itemHolder = storage.itemHolder<String>('status');
 
 // Convert to ValueNotifier
-final valueNotifier = itemHolder.toValueNotifier();
+final valueNotifier = itemHolder.asValueNotifier();
 
 // Use with ValueListenableBuilder in Flutter
 ValueListenableBuilder<String?>(
@@ -154,7 +154,8 @@ ValueListenableBuilder<String?>(
 );
 ```
 > Whenever you call `asValueNotifier`, it creates a new `ValueNotifier` instance. If you want to avoid creating 
-> multiple instances, consider storing the `ValueNotifier` in a variable and reusing it. 
+> multiple instances, consider storing the `ValueNotifier` in a variable and reusing it. Remember to dispose the
+> `ValueNotifier` once you no longer need it. 
 > 
 > Make sure to add `hyper_storage_flutter` package to your dependencies to use `asValueNotifier` method.
 
@@ -194,74 +195,36 @@ You can also stream changes in a `SerializableContainer`. This is useful when yo
 object.
 
 ```dart
-final todosContainer = await storage.jsonContainer<Todo>(
+final todos = await storage.jsonSerializableContainer<Todo>(
   'todos',
-  fromJson: (json) => Todo.fromJson(json),
-  toJson: (user) => Todo.toJson(),
+  fromJson: Todo.fromJson,
+  toJson: (todo) => todo.toJson(),
 );
 
 // Listen to changes in the entire container.
-final todosStream = todosContainer.streamAll();
-
-final subscription = todosStream.listen((todos) {
-    print('The todos have changed: $todos');
+final allTodosSubscription = todos.streamAll().listen((items) {
+  print('Todos changed: $items');
 });
 
-// Don't forget to cancel the subscription when it's no longer needed
-subscription.cancel();
+// Don't forget to cancel the subscription when it's no longer needed.
+allTodosSubscription.cancel();
 ```
 
-You can also stream changes for a specific key in a `SerializableContainer`:
+You can also stream changes for a specific key in a `SerializableStorageContainer`:
 
 ```dart
-final todosContainer = await storage.jsonContainer<Todo>(
+final todos = await storage.jsonSerializableContainer<Todo>(
   'todos',
-  fromJson: (json) => Todo.fromJson(json),
-  toJson: (user) => Todo.toJson(),
+  fromJson: Todo.fromJson,
+  toJson: (todo) => todo.toJson(),
 );
 
 // Listen to changes for a specific key in the container
-final todoStream = todosContainer.stream<Todo>('todo1');
-
-final subscription = todoStream.listen((todo) {
-    print('The todo has changed: $todo');
+final todoSubscription = todos.stream<Todo>('todo1').listen((todo) {
+  print('Todo todo1 changed: $todo');
 });
 
-// Don't forget to cancel the subscription when it's no longer needed
-subscription.cancel();
+todoSubscription.cancel();
 ```
 
-This is the same for any other type of `SerializableContainer`.
-
-```dart
-final postsContainer = await storage.objectContainer<Post>(
-  'posts',
-  serialize: (post) => post.toXMLString(),
-  deserialize: (map) => Post.fromXMLString(map),
-  idGetter: (post) => post.id,
-);
-
-// Listen to changes in the entire container.
-final postsStream = postsContainer.streamAll();
-
-final subscription = postsStream.listen((posts) {
-    print('The posts have changed: $posts');
-});
-
-// Don't forget to cancel the subscription when it's no longer needed
-subscription.cancel();
-```
-Listening to a specific item changes in the container:
-```dart
-// Listen to changes for a specific key in the container
-final postStream = postsContainer.stream<Post>(myPost.id);
-
-final subscription = postStream.listen((post) {
-    print('The post has changed: $post');
-});
-
-// Don't forget to cancel the subscription when it's no longer needed
-subscription.cancel();
-```
-
-This makes it easy to use with Flutter's `StreamBuilder` or any other stream-based approach.
+The same streaming APIs are available for any custom container that extends `SerializableStorageContainer`.

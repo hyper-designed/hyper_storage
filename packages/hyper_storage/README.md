@@ -69,13 +69,14 @@ Then, run `flutter pub get` or `dart pub get`.
 
 ## Usage
 
-Initialize the storage with a backend of your choice.
+Initialize the storage with the backend you want to use.
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
 
 void main() async {
-  // Initialize the storage with InMemoryBackend
+  // Initialize the storage with SharedPreferences
   final storage = await HyperStorage.init(backend: SharedPreferencesBackend());
 
   // Set a value
@@ -116,9 +117,10 @@ More backends are available in separate packages:
 
 ## Initialization
 
-You can initialize `hyper_storage` with a specific backend. If no backend is provided, it defaults to `InMemoryBackend`.
+You can initialize `hyper_storage` with any storage backend that implements the `StorageBackend` interface. Always pass
+the backend you want to use to `HyperStorage.init`.
 
-### Default (In-Memory)
+### In-memory (for tests or ephemeral data)
 
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
@@ -126,16 +128,13 @@ import 'package:hyper_storage/hyper_storage.dart';
 final storage = await HyperStorage.init(backend: InMemoryBackend());
 ```
 
-### Using Other Backends
+### Using other backends
 
-To use other backends, you need to add the respective package to your `pubspec.yaml` and then provide the backend instance to the `init` method.
-
-For example, to use the Hive backend:
+Add the desired backend package to your dependencies and provide the backend instance to `init`:
 
 ```dart
-// Make sure to add hyper_storage_hive to your dependencies
-import 'package:hyper_storage_hive/hyper_storage_hive.dart';
 import 'package:hyper_storage/hyper_storage.dart';
+import 'package:hyper_storage_hive/hyper_storage_hive.dart';
 
 final storage = await HyperStorage.init(backend: HiveBackend());
 ```
@@ -213,7 +212,7 @@ final List<Map<String, dynamic>>? items = await storage.getJsonList('items');
 You can use named containers to organize your data.
 
 ```dart
-final container = await HyperStorage.container('account');
+final container = await storage.container('account');
 await container.setString('username', 'john_doe');
 final String? username = await container.getString('username');
 ```
@@ -224,30 +223,29 @@ You can store and retrieve custom objects by providing `toJson` and `fromJson` f
 
 ```dart
 class User {
+  final String id;
   final String name;
-  final int age;
 
-  User({required this.name, required this.age});
+  User({required this.id, required this.name});
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(name: json['name'], age: json['age']);
-  }
+  factory User.fromJson(Map<String, dynamic> json) => User(
+        id: json['id'] as String,
+        name: json['name'] as String,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {'name': name, 'age': age};
-  }
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
-final storage = await HyperStorage.objectContainer<User>(
+final users = await storage.jsonSerializableContainer<User>(
   'users',
-  toJson: (user) => user.toJson(),
   fromJson: User.fromJson,
+  toJson: (user) => user.toJson(),
+  idGetter: (user) => user.id,
 );
 
-await storage.set('user1', User(name: 'John', age: 23));
-final User? user = await storage.get('user1');
-final List<User> users = await storage.getValues();
-final Map<String, User> allUsers = await storage.getAll();
+await users.add(User(id: 'user1', name: 'John'));
+final User? user = await users.get('user1');
+final List<User> allUsers = await users.getValues();
 ```
 
 ## Checking for Keys
