@@ -398,6 +398,28 @@ class HyperStorage extends _HyperStorageImpl {
   /// to avoid memory leaks. This can be done by cancelling the subscription
   /// to the stream.
   ///
+  /// ⚠️ **Flutter StreamBuilder Usage:**
+  /// Do NOT call this method directly in a build method. Each call creates a
+  /// new stream instance, causing unnecessary rebuilds and performance issues.
+  ///
+  /// Instead, either:
+  /// 1. Use [ItemHolder] which is designed for StreamBuilder (recommended)
+  /// 2. Cache the stream in a `late final` variable or create it in `initState()`
+  ///
+  /// Example of the recommended approach:
+  /// ```dart
+  /// late final itemHolder = storage.itemHolder<String>('key');
+  ///
+  /// Widget build(BuildContext context) {
+  ///   return StreamBuilder<String?>(
+  ///     stream: itemHolder, // ✅ Safe: ItemHolder is a persistent stream
+  ///     builder: (context, snapshot) => Text(snapshot.data ?? ''),
+  ///   );
+  /// }
+  /// ```
+  ///
+  /// See the reactivity documentation for more examples and patterns.
+  ///
   /// Note that only supported types are allowed for [E].
   /// Supported types are:
   ///   - String

@@ -6,6 +6,7 @@
 - [Streaming Item Holder Changes](#streaming-item-holder-changes)
 - [Converting Item Holder to a ValueNotifier](#converting-item-holder-to-a-valuenotifier)
 - [Streaming key changes](#streaming-key-changes)
+- [⚠️ Important: Using Streams with Flutter's StreamBuilder](#️-important-using-streams-with-flutters-streambuilder)
 - [Streaming with Serializable Containers](#streaming-with-serializable-containers)
 
 ## Reactivity
@@ -188,6 +189,144 @@ final subscription = emailStream.listen((newEmail) {
 // Don't forget to cancel the subscription when it's no longer needed
 subscription.cancel();
 ```
+
+## ⚠️ Important: Using Streams with Flutter's StreamBuilder
+
+When using streams with Flutter's `StreamBuilder`, it's crucial to understand the difference between safe and unsafe patterns.
+
+### ❌ **Unsafe Pattern: Calling `stream()` directly in build method**
+
+**DO NOT do this:**
+
+```dart
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<String?>(
+      stream: storage.stream<String>('name'), // ❌ BAD: Creates new stream every rebuild!
+      builder: (context, snapshot) {
+        return Text(snapshot.data ?? 'Unknown');
+      },
+    );
+  }
+}
+```
+
+**Why this is problematic:**
+
+- Every time `build()` is called, a **new stream instance** is created
+- `StreamBuilder` detects a different stream and recreates the subscription
+- This causes:
+  - Unnecessary memory allocations (new `StreamController` each time)
+  - Performance overhead (creating/destroying subscriptions repeatedly)
+  - The initial value is re-fetched unnecessarily
+  - Potential UI flickering as the stream restarts
+
+### ✅ **Safe Pattern 1: Use ItemHolder (Recommended)**
+
+The recommended approach is to use `ItemHolder`, which is specifically designed for this use case:
+
+```dart
+class MyWidget extends StatefulWidget {
+  @override
+  State<MyWidget> createState() => _MyWidgetState();
+}
+
+class _MyWidgetState extends State<MyWidget> {
+  // Create ItemHolder once - it's a persistent stream
+  late final itemHolder = storage.itemHolder<String>('name');
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<String?>(
+      stream: itemHolder, // ✅ SAFE: ItemHolder is the same instance every time
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+        return Text(snapshot.data ?? 'Unknown');
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    itemHolder.dispose(); // Clean up when done
+    super.dispose();
+  }
+}
+```
+
+**Why ItemHolder is safe:**
+
+- `ItemHolder` **is** a `Stream` - it implements `Stream<E?>`
+- It uses a single, persistent `StreamController.broadcast()`
+- The same `ItemHolder` instance is reused on every build
+- Efficient: no unnecessary object creation or subscription cycling
+
+### ✅ **Safe Pattern 2: Cache the stream in a variable**
+
+If you prefer to use the `stream()` method, cache it in a `late final` variable:
+
+```dart
+class MyWidget extends StatefulWidget {
+  @override
+  State<MyWidget> createState() => _MyWidgetState();
+}
+
+class _MyWidgetState extends State<MyWidget> {
+  // Cache the stream - created once and reused
+  late final Stream<String?> nameStream = storage.stream<String>('name');
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<String?>(
+      stream: nameStream, // ✅ SAFE: Same stream instance reused
+      builder: (context, snapshot) {
+        return Text(snapshot.data ?? 'Unknown');
+      },
+    );
+  }
+}
+```
+
+### ✅ **Safe Pattern 3: Create stream in `initState()`**
+
+Alternatively, create the stream in `initState()`:
+
+```dart
+class _MyWidgetState extends State<MyWidget> {
+  late Stream<String?> nameStream;
+
+  @override
+  void initState() {
+    super.initState();
+    nameStream = storage.stream<String>('name');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<String?>(
+      stream: nameStream, // ✅ SAFE: Same stream instance
+      builder: (context, snapshot) {
+        return Text(snapshot.data ?? 'Unknown');
+      },
+    );
+  }
+}
+```
+
+### Summary: Which pattern should you use?
+
+| Pattern | Recommended? | When to use |
+|---------|-------------|-------------|
+| **ItemHolder** | ✅ **Best** | Default choice for most cases. Clean, efficient, purpose-built for Flutter. |
+| **Cached stream (late final)** | ✅ Good | When you need the `stream()` method specifically. |
+| **initState stream** | ✅ Good | When initialization logic is complex. |
+| **Direct stream() call in build()** | ❌ **Never** | Don't use - causes performance issues. |
 
 ## Streaming with Serializable Containers
 
