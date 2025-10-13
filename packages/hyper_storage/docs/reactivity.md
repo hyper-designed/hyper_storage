@@ -6,6 +6,7 @@
 - [Streaming Item Holder Changes](#streaming-item-holder-changes)
 - [Converting Item Holder to a ValueNotifier](#converting-item-holder-to-a-valuenotifier)
 - [Streaming key changes](#streaming-key-changes)
+- [Using Streams with Flutter's StreamBuilder](#using-streams-with-flutters-streambuilder)
 - [Streaming with Serializable Containers](#streaming-with-serializable-containers)
 
 ## Reactivity

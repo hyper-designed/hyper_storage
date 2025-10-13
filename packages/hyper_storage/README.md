@@ -5,17 +5,14 @@
     <img src="https://img.shields.io/pub/v/hyper_storage?label=pub.dev&labelColor=333940&logo=dart&color=00589B">
   </a>
   <a href="https://github.com/hyper-designed/hyper_storage/actions/workflows/test.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/hyper-designed/hyper_storage/test.yml?branch=main&label=tests&labelColor=333940&logo=github">
+    <img src="https://img.shields.io/github/actions/workflow/status/hyper-designed/hyper_storage/test.yml?branch=main&label=tests&labelColor=333940">
   </a>
   <a href="https://app.codecov.io/gh/hyper-designed/hyper_storage">
     <img src="https://img.shields.io/codecov/c/github/hyper-designed/hyper_storage?logo=codecov&logoColor=fff&labelColor=333940">
   </a>
   <br/>
-  <a href="https://twitter.com/birjuvachhani">
-    <img src="https://img.shields.io/badge/follow-%40birjuvachhani-1DA1F2?style=flat&label=follow&color=1DA1F2&labelColor=333940&logo=twitter&logoColor=fff">
-  </a>
-    <a href="https://twitter.com/saadardati">
-    <img src="https://img.shields.io/badge/follow-%40saadardati-F0A1F2?style=flat&label=follow&color=0F77dd&labelColor=333940&logo=twitter&logoColor=fff">
+  <a href="https://github.com/hyper-designed/hyper_storage/actions/workflows/quality.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/hyper-designed/hyper_storage/quality.yml?branch=main&label=Code%20Quality&labelColor=333940">
   </a>
   <a href="https://github.com/hyper-designed/hyper_storage">
     <img src="https://img.shields.io/github/stars/hyper-designed/hyper_storage?style=flat&label=stars&labelColor=333940&color=8957e5&logo=github">
