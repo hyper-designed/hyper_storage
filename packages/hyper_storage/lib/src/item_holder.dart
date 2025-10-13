@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../hyper_storage.dart';
+import 'managed_stream.dart';
 import 'utils.dart';
 
 /// Function type definition for getting an item from the storage backend.
@@ -28,17 +29,11 @@ typedef ItemSetter<E extends Object> = Future<void> Function(StorageBackend back
 /// require complex serialization, or when you want to manage the serialization
 /// {@category Item Holders}
 /// {@category Enums}
-class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, ItemHolderApi<E> {
+class ItemHolder<E extends Object> extends ManagedStream<E?> implements BaseListenable, ItemHolderApi<E> {
   BaseStorage? _parent;
   final String _key;
 
-  bool _isClosed = false;
-
   final List<Enum>? _enumValues;
-
-  /// The key associated with this item holder.
-  @internal
-  bool get isClosed => _isClosed;
 
   /// Custom getter function to retrieve the item from the backend.
   ///
@@ -60,7 +55,11 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   /// the corresponding backend default will be used.
   final ItemSetter<E>? setter;
 
-  final StreamController<E?> _streamController = StreamController<E?>.broadcast();
+  late final ListenableCallback _parentListener;
+  bool _isFetching = false;
+
+  // Track external listeners separately from the internal _parentListener
+  final Set<ListenableCallback> _externalListeners = {};
 
   /// Creates a new [ItemHolder] instance.
   ItemHolder(
@@ -69,7 +68,34 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
     this.getter,
     this.setter,
     List<Enum>? enumValues,
-  }) : _enumValues = enumValues;
+  }) : _enumValues = enumValues {
+    // Set up single parent listener that updates the stream when value changes
+    _parentListener = () => _fetchAndEmit();
+
+    // Parent listener will be added lazily when first subscription happens
+  }
+
+  /// Fetches the latest value from storage and emits it to the stream.
+  ///
+  /// This method is called:
+  /// - When storage changes (via _parentListener)
+  /// - When a new listener subscribes (to get fresh value)
+  ///
+  /// Debounces concurrent fetch requests to prevent race conditions.
+  /// Note: Errors during fetch emit null if no cached value exists, preserving
+  /// the last valid value otherwise. This prevents stale error states.
+  void _fetchAndEmit() {
+    if (isClosed || _isFetching) return;
+    _isFetching = true;
+
+    get().then(emit).catchError((error, stackTrace) {
+      // If no value has been cached yet, emit null so listeners receive something.
+      // If a value exists, retain it rather than overwriting with null.
+      if (!streamController.hasValue) {
+        emit(null);
+      }
+    }).whenComplete(() => _isFetching = false);
+  }
 
   @override
   Future<bool> get exists => _parent?.backend.containsKey(_key) ?? Future.value(false);
@@ -105,10 +131,13 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   }
 
   @override
-  void addListener(ListenableCallback listener) => _parent?.addKeyListener(_key, listener);
+  void addListener(ListenableCallback listener) {
+    _externalListeners.add(listener);
+    _parent?.addKeyListener(_key, listener);
+  }
 
   @override
-  bool get hasListeners => _parent?.hasKeyListeners(_key) == true;
+  bool get hasListeners => _externalListeners.isNotEmpty;
 
   @override
   @internal
@@ -117,54 +146,41 @@ class ItemHolder<E extends Object> with Stream<E?> implements BaseListenable, It
   void notifyListeners() => _parent?.notifyListeners(_key);
 
   @override
-  void removeAllListeners() => _parent?.removeAllKeyListeners(_key);
-
-  @override
-  void removeListener(ListenableCallback listener) => _parent?.removeKeyListener(_key, listener);
-
-  @override
-  StreamSubscription<E?> listen(
-    void Function(E? event)? onData, {
-    Function? onError,
-    void Function()? onDone,
-    bool? cancelOnError,
-  }) {
-    // Add a listener that will update the stream when the value changes
-    void listener() {
-      if (_streamController.isClosed) return;
-      get().then((value) {
-        if (_streamController.isClosed) return;
-        _streamController.add(value);
-      });
+  void removeAllListeners() {
+    // Remove only external listeners, keep _parentListener for stream functionality
+    for (final listener in List.from(_externalListeners)) {
+      _parent?.removeKeyListener(_key, listener);
     }
+    _externalListeners.clear();
+  }
 
-    addListener(listener);
+  @override
+  void removeListener(ListenableCallback listener) {
+    _externalListeners.remove(listener);
+    _parent?.removeKeyListener(_key, listener);
+  }
 
-    // load initial value
-    get().then((value) {
-      if (_streamController.isClosed) return;
-      _streamController.add(value);
-    });
+  @override
+  void onFirstListener() {
+    _parent?.addKeyListener(_key, _parentListener);
+  }
 
-    final subscription = _streamController.stream.listen(
-      onData,
-      onError: onError,
-      onDone: onDone,
-      cancelOnError: cancelOnError,
-    );
+  @override
+  void onNewListener() {
+    _fetchAndEmit();
+  }
 
-    // Remove listener when subscription is cancelled
-    subscription.onDone(() => removeListener(listener));
-
-    return subscription;
+  @override
+  void onNoListeners() {
+    _parent?.removeKeyListener(_key, _parentListener);
   }
 
   @override
   void dispose() {
+    super.dispose();
+    // Remove all external listeners
     removeAllListeners();
-    _streamController.close();
     _parent = null;
-    _isClosed = true;
   }
 }
 

@@ -104,7 +104,14 @@ container.removeListener(onSettingsChanged);
 Item Holder also supports streaming changes using Dart's `Stream` API. This allows you to listen to changes in a more
 flexible way, such as using `StreamBuilder` in Flutter.
 
-`ItemHolder<E>` implements `Stream<E?>`, so you can listen to it directly.
+`ItemHolder<E>` extends `ManagedStream<E?>` and implements `Stream<E?>`, so you can listen to it directly.
+
+## Implementation Details
+
+ItemHolder uses a `BehaviorSubject` (from rxdart) internally, which provides several benefits:
+- **Automatic value caching**: The latest value is cached and automatically emitted to new listeners
+- **Multiple concurrent listeners**: Efficiently supports many listeners without duplicating work
+- **Lazy activation**: Only starts fetching values when someone is actually listening
 
 ```dart
 final itemHolder = storage.itemHolder<String>('status');
@@ -118,7 +125,9 @@ final subscription = itemHolder.listen((newStatus) {
 subscription.cancel();
 ```
 
-Using with StreamBuilder in Flutter:
+## Using with StreamBuilder in Flutter
+
+ItemHolder is specifically designed for use with Flutter's `StreamBuilder`:
 
 ```dart
 StreamBuilder<String?>(
@@ -127,14 +136,16 @@ StreamBuilder<String?>(
     if (snapshot.connectionState == ConnectionState.waiting) {
       return CircularProgressIndicator();
     }
-    if (snapshot.hasError) {
-      return Text('Error: ${snapshot.error}');
-    }
+    // Note: ItemHolder doesn't emit errors - they're handled silently
     final status = snapshot.data ?? 'Unknown';
     return Text('Status: $status');
   },
 );
 ```
+
+**Note**: Unlike traditional streams, ItemHolder does **not** emit errors during value retrieval. This prevents
+transient failures (like network issues) from being cached and replayed to future listeners. The stream simply
+retains its last valid value and retries on the next update.
 
 ## Converting Item Holder to a ValueNotifier
 
@@ -192,39 +203,24 @@ subscription.cancel();
 
 ## ⚠️ Important: Using Streams with Flutter's StreamBuilder
 
-When using streams with Flutter's `StreamBuilder`, it's crucial to understand the difference between safe and unsafe patterns.
+When using streams with Flutter's `StreamBuilder`, it's important to understand the best patterns and practices.
 
-### ❌ **Unsafe Pattern: Calling `stream()` directly in build method**
+### ✅ **The `stream()` Method is Now Safe**
 
-**DO NOT do this:**
+As of the latest version, the `stream()` method returns a **cached `ItemHolder` instance**, making it safe to call repeatedly:
 
 ```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<String?>(
-      stream: storage.stream<String>('name'), // ❌ BAD: Creates new stream every rebuild!
-      builder: (context, snapshot) {
-        return Text(snapshot.data ?? 'Unknown');
-      },
-    );
-  }
-}
+// These both return the exact same ItemHolder object:
+final stream1 = storage.stream<String>('name');
+final stream2 = storage.stream<String>('name');
+print(identical(stream1, stream2)); // true
 ```
 
-**Why this is problematic:**
+This means calling `storage.stream('key')` directly in a build method is now technically safe, as it returns the same cached instance each time. However, for code clarity and best practices, we still recommend the patterns below.
 
-- Every time `build()` is called, a **new stream instance** is created
-- `StreamBuilder` detects a different stream and recreates the subscription
-- This causes:
-  - Unnecessary memory allocations (new `StreamController` each time)
-  - Performance overhead (creating/destroying subscriptions repeatedly)
-  - The initial value is re-fetched unnecessarily
-  - Potential UI flickering as the stream restarts
+### ✅ **Recommended Pattern: Use ItemHolder Directly**
 
-### ✅ **Safe Pattern 1: Use ItemHolder (Recommended)**
-
-The recommended approach is to use `ItemHolder`, which is specifically designed for this use case:
+The clearest and most explicit approach is to use `ItemHolder` directly:
 
 ```dart
 class MyWidget extends StatefulWidget {
@@ -233,20 +229,18 @@ class MyWidget extends StatefulWidget {
 }
 
 class _MyWidgetState extends State<MyWidget> {
-  // Create ItemHolder once - it's a persistent stream
+  // Create ItemHolder once - it's a persistent stream with value caching
   late final itemHolder = storage.itemHolder<String>('name');
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<String?>(
-      stream: itemHolder, // ✅ SAFE: ItemHolder is the same instance every time
+      stream: itemHolder, // ✅ BEST: Clear intent, uses ItemHolder directly
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return CircularProgressIndicator();
         }
-        if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        }
+        // Note: ItemHolder doesn't emit errors - no need to check snapshot.hasError
         return Text(snapshot.data ?? 'Unknown');
       },
     );
@@ -260,16 +254,18 @@ class _MyWidgetState extends State<MyWidget> {
 }
 ```
 
-**Why ItemHolder is safe:**
+**Why ItemHolder is recommended:**
 
-- `ItemHolder` **is** a `Stream` - it implements `Stream<E?>`
-- It uses a single, persistent `StreamController.broadcast()`
-- The same `ItemHolder` instance is reused on every build
-- Efficient: no unnecessary object creation or subscription cycling
+- **Clear intent**: Makes it obvious you're using a managed stream
+- **Value caching**: Uses `BehaviorSubject` - new listeners get the cached value immediately
+- **Efficient**: Single persistent stream with lazy activation
+- **Multiple listeners**: Supports many concurrent listeners without duplicating work
+- **No error emissions**: Transient failures don't get cached and replayed
 
-### ✅ **Safe Pattern 2: Cache the stream in a variable**
+### ✅ **Also Acceptable: Cache the stream in a variable**
 
-If you prefer to use the `stream()` method, cache it in a `late final` variable:
+If you prefer to use the `stream()` method, you can cache it in a `late final` variable.
+Since `stream()` returns a cached `ItemHolder`, this is now equivalent to Pattern 1:
 
 ```dart
 class MyWidget extends StatefulWidget {
@@ -278,24 +274,33 @@ class MyWidget extends StatefulWidget {
 }
 
 class _MyWidgetState extends State<MyWidget> {
-  // Cache the stream - created once and reused
+  // Cache the stream - actually returns the same ItemHolder as itemHolder<String>('name')
   late final Stream<String?> nameStream = storage.stream<String>('name');
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<String?>(
-      stream: nameStream, // ✅ SAFE: Same stream instance reused
+      stream: nameStream, // ✅ SAFE: Same cached ItemHolder instance
       builder: (context, snapshot) {
         return Text(snapshot.data ?? 'Unknown');
       },
     );
   }
+
+  @override
+  void dispose() {
+    // If using stream(), you can cast to dispose if needed
+    if (nameStream is ItemHolder) {
+      (nameStream as ItemHolder).dispose();
+    }
+    super.dispose();
+  }
 }
 ```
 
-### ✅ **Safe Pattern 3: Create stream in `initState()`**
+### ✅ **Create stream in `initState()`**
 
-Alternatively, create the stream in `initState()`:
+You can also create the stream in `initState()`:
 
 ```dart
 class _MyWidgetState extends State<MyWidget> {
@@ -304,13 +309,13 @@ class _MyWidgetState extends State<MyWidget> {
   @override
   void initState() {
     super.initState();
-    nameStream = storage.stream<String>('name');
+    nameStream = storage.stream<String>('name');  // Returns cached ItemHolder
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<String?>(
-      stream: nameStream, // ✅ SAFE: Same stream instance
+      stream: nameStream, // ✅ SAFE: Same cached instance
       builder: (context, snapshot) {
         return Text(snapshot.data ?? 'Unknown');
       },
@@ -321,12 +326,12 @@ class _MyWidgetState extends State<MyWidget> {
 
 ### Summary: Which pattern should you use?
 
-| Pattern | Recommended? | When to use |
-|---------|-------------|-------------|
-| **ItemHolder** | ✅ **Best** | Default choice for most cases. Clean, efficient, purpose-built for Flutter. |
-| **Cached stream (late final)** | ✅ Good | When you need the `stream()` method specifically. |
-| **initState stream** | ✅ Good | When initialization logic is complex. |
-| **Direct stream() call in build()** | ❌ **Never** | Don't use - causes performance issues. |
+| Pattern | Recommended? | Notes |
+|---------|-------------|-------|
+| **ItemHolder directly** | ✅ **Best** | Most explicit. Clear intent. Direct access to ItemHolder API. |
+| **Cached stream (late final)** | ✅ Good | Same as above but less explicit. `stream()` returns ItemHolder internally. |
+| **initState stream** | ✅ Good | Useful for complex initialization. Still returns cached ItemHolder. |
+| **Direct stream() in build()** | ⚠️ **Acceptable but discouraged** | Now safe (returns cached instance) but not recommended for code clarity. |
 
 ## Streaming with Serializable Containers
 

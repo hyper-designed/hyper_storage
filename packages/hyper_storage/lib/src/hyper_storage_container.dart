@@ -11,7 +11,6 @@ import 'package:meta/meta.dart' show protected;
 import '../hyper_storage.dart';
 import 'api/backend.dart';
 import 'api/storage_container.dart';
-import 'utils.dart';
 
 /// A concrete implementation of [StorageContainer] for storing key-value pairs.
 ///
@@ -258,80 +257,143 @@ final class HyperStorageContainer extends StorageContainer with ItemHolderMixin,
     notifyListeners();
   }
 
-  /// Provides a [Stream] of values for the given [key].
-  /// The stream will emit the current value of the key and will update
-  /// whenever the value changes.
+  /// Provides a [Stream] of values for the given [key] within this container.
   ///
-  /// If an error occurs during value retrieval (either initial or on updates),
-  /// the error will be emitted to the stream. Listeners should provide an
-  /// [onError] callback to handle such errors gracefully.
+  /// This method returns an [ItemHolder] which is a persistent, broadcast stream
+  /// that emits the current value immediately to new listeners, then emits updates
+  /// whenever the value changes in storage.
   ///
-  /// It is important to close the stream when it is no longer needed
-  /// to avoid memory leaks. This can be done by cancelling the subscription
-  /// to the stream.
+  /// ## Implementation Details
   ///
-  /// ⚠️ **Flutter StreamBuilder Usage:**
-  /// Do NOT call this method directly in a build method. Each call creates a
-  /// new stream instance, causing unnecessary rebuilds and performance issues.
+  /// This method delegates to [itemHolder], returning a cached [ItemHolder] instance.
+  /// Calling `stream('key')` and `itemHolder('key')` return the exact same object.
   ///
-  /// Instead, either:
-  /// 1. Use [ItemHolder] which is designed for StreamBuilder (recommended)
-  /// 2. Cache the stream in a `late final` variable or create it in `initState()`
+  /// The returned stream uses `BehaviorSubject` internally, which:
+  /// - Caches the latest value
+  /// - Emits the cached value immediately to new listeners
+  /// - Supports multiple concurrent listeners efficiently
+  /// - Uses lazy activation (only fetches when listeners are present)
   ///
-  /// Example of the recommended approach:
+  /// ## Error Handling
+  ///
+  /// Unlike traditional streams, errors during value retrieval are **not** emitted
+  /// to the stream. This prevents transient failures from being cached and replayed
+  /// to future listeners. Instead, the stream retains its last valid value and
+  /// retries on the next update.
+  ///
+  /// ## Memory Management
+  ///
+  /// Cancel subscriptions when they're no longer needed:
+  ///
   /// ```dart
-  /// late final itemHolder = container.itemHolder<String>('key');
+  /// final container = await storage.container('user');
+  /// final subscription = container.stream<String>('name').listen((value) {
+  ///   print('Name: $value');
+  /// });
+  ///
+  /// // Later:
+  /// await subscription.cancel();
+  /// ```
+  ///
+  /// ## Flutter StreamBuilder Usage
+  ///
+  /// This method is safe to use with `StreamBuilder` as it returns a cached
+  /// [ItemHolder]. However, for cleaner code, use [itemHolder] directly:
+  ///
+  /// **Recommended:**
+  /// ```dart
+  /// late final itemHolder = container.itemHolder<String>('name');
   ///
   /// Widget build(BuildContext context) {
   ///   return StreamBuilder<String?>(
-  ///     stream: itemHolder, // ✅ Safe: ItemHolder is a persistent stream
+  ///     stream: itemHolder, // ✅ Clear and explicit
   ///     builder: (context, snapshot) => Text(snapshot.data ?? ''),
   ///   );
   /// }
   /// ```
   ///
-  /// See the reactivity documentation for more examples and patterns.
+  /// **Also acceptable:**
+  /// ```dart
+  /// late final nameStream = container.stream<String>('name');
   ///
-  /// Note that only supported types are allowed for [E].
-  /// Supported types are:
+  /// Widget build(BuildContext context) {
+  ///   return StreamBuilder<String?>(
+  ///     stream: nameStream, // ✅ Safe: cached stream
+  ///     builder: (context, snapshot) => Text(snapshot.data ?? ''),
+  ///   );
+  /// }
+  /// ```
+  ///
+  /// ## Supported Types
+  ///
+  /// Only the following types are supported for [E]:
   ///   - String
   ///   - int
   ///   - double
   ///   - bool
   ///   - List of String
-  ///   - JSON Map
-  ///   - List of JSON Map
+  ///   - JSON Map (`Map<String, dynamic>`)
+  ///   - List of JSON Maps
   ///   - DateTime
   ///   - Duration
   ///   - Uint8List
   ///   - Enum (requires providing [enumValues])
-  Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) async* {
-    if (enumValues != null) checkEnumType<E>(enumValues);
+  ///
+  /// Parameters:
+  ///   * [key] - The key within this container to stream values for
+  ///   * [enumValues] - Required when [E] is an Enum type
+  ///
+  /// Returns:
+  ///   A broadcast [Stream] emitting current and future values. Same [ItemHolder]
+  ///   returned for repeated calls with the same key.
+  ///
+  /// See also:
+  ///   * [itemHolder] - Direct access to the underlying ItemHolder (recommended)
+  Stream<E?> stream<E extends Object>(String key, {List<Enum>? enumValues}) =>
+      itemHolder<E>(key, enumValues: enumValues);
 
-    final controller = StreamController<E?>();
+  /// Provides a [Stream] of JSON-serializable objects for the given [key].
+  ///
+  /// Returns a cached [JsonItemHolder] that handles automatic JSON serialization.
+  /// Like [stream], this is safe for use with StreamBuilder.
+  ///
+  /// Example:
+  /// ```dart
+  /// final container = await storage.container('users');
+  /// final userStream = container.jsonStream<User>(
+  ///   'currentUser',
+  ///   fromJson: User.fromJson,
+  ///   toJson: (user) => user.toJson(),
+  /// );
+  /// ```
+  ///
+  /// See also:
+  ///   * [jsonItemHolder] - Direct access to the underlying JsonItemHolder
+  Stream<E?> jsonStream<E extends Object>(String key, {required FromJson<E> fromJson, required ToJson<E> toJson}) =>
+      jsonItemHolder<E>(key, fromJson: fromJson, toJson: toJson);
 
-    Future<void> retrieveAndAdd() async {
-      if (controller.isClosed) return;
-      try {
-        final E? value = await get<E>(key, enumValues: enumValues);
-        if (!controller.isClosed) controller.add(value);
-      } catch (error, stacktrace) {
-        if (!controller.isClosed) controller.addError(error, stacktrace);
-        return;
-      }
-    }
-
-    addKeyListener(key, retrieveAndAdd);
-
-    try {
-      // Reads and emits the initial value.
-      await retrieveAndAdd();
-      yield* controller.stream;
-    } finally {
-      removeKeyListener(key, retrieveAndAdd);
-      await controller.close();
-    }
-  }
+  /// Provides a [Stream] of custom-serializable objects for the given [key].
+  ///
+  /// Returns a cached [SerializableItemHolder] with custom serialization logic.
+  /// Use this for non-JSON serialization formats (Protocol Buffers, XML, etc.).
+  ///
+  /// Example:
+  /// ```dart
+  /// final container = await storage.container('settings');
+  /// final configStream = container.serializableStream<Config>(
+  ///   'appConfig',
+  ///   serialize: (config) => config.toXml(),
+  ///   deserialize: (xml) => Config.fromXml(xml),
+  /// );
+  /// ```
+  ///
+  /// See also:
+  ///   * [serializableItemHolder] - Direct access to the underlying holder
+  Stream<E?> serializableStream<E extends Object>(
+    String key, {
+    required SerializeCallback<E> serialize,
+    required DeserializeCallback<E> deserialize,
+  }) => serializableItemHolder<E>(key, serialize: serialize, deserialize: deserialize);
 
   @override
   Future<void> close() async {

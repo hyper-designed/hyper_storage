@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:hyper_storage/hyper_storage.dart';
@@ -809,7 +810,7 @@ void main() {
         await backend2.close();
       });
 
-      test('stream() handles errors during value retrieval', () async {
+      test('stream() does not emit errors during value retrieval', () async {
         // Create a backend that will throw an error
         final errorBackend = ContainerErrorThrowingBackend();
         await errorBackend.init();
@@ -817,23 +818,145 @@ void main() {
 
         final stream = errorContainer.stream<String>('errorKey');
         final errors = <Object>[];
+        final values = <String?>[];
 
         final subscription = stream.listen(
-          (_) {},
+          values.add,
           onError: errors.add,
         );
 
+        // Wait for initial fetch attempt (which will fail silently)
         await Future.delayed(Duration(milliseconds: 50));
+
+        // Verify no errors were emitted (they're caught internally)
+        expect(errors, isEmpty);
+
+        // Verify stream received null (no value exists)
+        expect(values, [null]);
+
         await subscription.cancel();
-
-        expect(errors, isNotEmpty);
-        expect(errors.first, isA<Exception>());
-
         await errorContainer.close();
         await errorBackend.close();
       });
+
+      test('jsonStream() returns cached JsonItemHolder', () async {
+        final stream1 = container.jsonStream<TestModel>(
+          'testModel',
+          fromJson: TestModel.fromJson,
+          toJson: (model) => model.toJson(),
+        );
+
+        final stream2 = container.jsonStream<TestModel>(
+          'testModel',
+          fromJson: TestModel.fromJson,
+          toJson: (model) => model.toJson(),
+        );
+
+        // Verify same instance is returned (caching)
+        expect(identical(stream1, stream2), isTrue);
+      });
+
+      test('jsonStream() emits values correctly', () async {
+        final testModel = TestModel(name: 'Alice', age: 35);
+
+        // Get the stream first (which creates the JsonItemHolder)
+        final stream = container.jsonStream<TestModel>(
+          'testModel',
+          fromJson: TestModel.fromJson,
+          toJson: (model) => model.toJson(),
+        );
+
+        // Store using jsonItemHolder (not setJson)
+        final holder = container.jsonItemHolder<TestModel>(
+          'testModel',
+          fromJson: TestModel.fromJson,
+          toJson: (model) => model.toJson(),
+        );
+        await holder.set(testModel);
+
+        final values = <TestModel?>[];
+        final subscription = stream.listen(values.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        expect(values, hasLength(1));
+        expect(values.first?.name, 'Alice');
+        expect(values.first?.age, 35);
+
+        await subscription.cancel();
+      });
+
+      test('serializableStream() returns cached SerializableItemHolder', () async {
+        final stream1 = container.serializableStream<TestModel>(
+          'testModel',
+          serialize: (model) => model.toJson().toString(),
+          deserialize: (str) => TestModel.fromJson(
+            Map<String, dynamic>.from({'data': str}),
+          ),
+        );
+
+        final stream2 = container.serializableStream<TestModel>(
+          'testModel',
+          serialize: (model) => model.toJson().toString(),
+          deserialize: (str) => TestModel.fromJson(
+            Map<String, dynamic>.from({'data': str}),
+          ),
+        );
+
+        // Verify same instance is returned (caching)
+        expect(identical(stream1, stream2), isTrue);
+      });
+
+      test('serializableStream() emits values correctly', () async {
+        final testModel = TestModel(name: 'Bob', age: 40);
+
+        // Get the stream first (which creates the SerializableItemHolder)
+        final stream = container.serializableStream<TestModel>(
+          'testModel',
+          serialize: (model) => jsonEncode(model.toJson()),
+          deserialize: (str) => TestModel.fromJson(jsonDecode(str) as Map<String, dynamic>),
+        );
+
+        // Store using serializableItemHolder
+        final holder = container.serializableItemHolder<TestModel>(
+          'testModel',
+          serialize: (model) => jsonEncode(model.toJson()),
+          deserialize: (str) => TestModel.fromJson(jsonDecode(str) as Map<String, dynamic>),
+        );
+        await holder.set(testModel);
+
+        final values = <TestModel?>[];
+        final subscription = stream.listen(values.add);
+
+        await Future.delayed(Duration(milliseconds: 50));
+
+        expect(values, hasLength(1));
+        expect(values.first?.name, 'Bob');
+        expect(values.first?.age, 40);
+
+        await subscription.cancel();
+      });
     });
   });
+}
+
+// Test model for JSON serialization tests
+class TestModel {
+  final String name;
+  final int age;
+
+  TestModel({required this.name, required this.age});
+
+  factory TestModel.fromJson(Map<String, dynamic> json) {
+    return TestModel(
+      name: json['name'] as String,
+      age: json['age'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'name': name, 'age': age};
+  }
 }
 
 // Backend that throws errors for testing error handling in containers
