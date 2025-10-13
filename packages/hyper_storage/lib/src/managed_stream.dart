@@ -88,6 +88,7 @@ abstract class ManagedStream<E> with Stream<E> {
   /// This allows subclasses to check if a value has been cached using
   /// `streamController.hasValue` to implement custom error handling logic.
   @protected
+  @visibleForTesting
   BehaviorSubject<E> get streamController => _streamController;
 
   int _subscriptionCount = 0;
