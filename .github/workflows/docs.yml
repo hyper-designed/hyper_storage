@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'docs/**'
+      - 'packages/hyper_storage/docs/**'
   workflow_dispatch:
 
 jobs:
