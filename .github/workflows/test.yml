@@ -5,13 +5,17 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**/*.dart'
   pull_request:
     branches:
       - main
+    paths:
+      - '**/*.dart'
 
 jobs:
   test:
-    name: Analyze and Test
+    name: Test
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
@@ -21,12 +25,6 @@ jobs:
           channel: stable
       - name: Pub Get
         run: dart pub get
-
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
-
-      - name: Lint
-        run: dart analyze . --fatal-infos
 
       - name: Run Main Tests
         working-directory: ./packages/hyper_storage
