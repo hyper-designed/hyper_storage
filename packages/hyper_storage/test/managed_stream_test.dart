@@ -245,11 +245,13 @@ void main() {
 
         expect(
           () => stream.listen((_) {}),
-          throwsA(isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('Cannot listen to a disposed'),
-          )),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('Cannot listen to a disposed'),
+            ),
+          ),
         );
       });
 

@@ -551,8 +551,8 @@ class HyperStorage extends _HyperStorageImpl {
   ///   * [serializableItemHolder] - Direct access to the underlying SerializableItemHolder
   ///   * [jsonStream] - For JSON serialization
   Stream<E?> serializableStream<E extends Object>(
-      String key, {
-        required SerializeCallback<E> serialize,
-        required DeserializeCallback<E> deserialize,
-      }) => serializableItemHolder<E>(key, serialize: serialize, deserialize: deserialize);
+    String key, {
+    required SerializeCallback<E> serialize,
+    required DeserializeCallback<E> deserialize,
+  }) => serializableItemHolder<E>(key, serialize: serialize, deserialize: deserialize);
 }

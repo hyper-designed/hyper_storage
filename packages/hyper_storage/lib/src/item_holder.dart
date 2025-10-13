@@ -88,13 +88,16 @@ class ItemHolder<E extends Object> extends ManagedStream<E?> implements BaseList
     if (isClosed || _isFetching) return;
     _isFetching = true;
 
-    get().then(emit).catchError((error, stackTrace) {
-      // If no value has been cached yet, emit null so listeners receive something.
-      // If a value exists, retain it rather than overwriting with null.
-      if (!streamController.hasValue) {
-        emit(null);
-      }
-    }).whenComplete(() => _isFetching = false);
+    get()
+        .then(emit)
+        .catchError((error, stackTrace) {
+          // If no value has been cached yet, emit null so listeners receive something.
+          // If a value exists, retain it rather than overwriting with null.
+          if (!streamController.hasValue) {
+            emit(null);
+          }
+        })
+        .whenComplete(() => _isFetching = false);
   }
 
   @override
