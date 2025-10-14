@@ -5,6 +5,8 @@
 
 A backend for `hyper_storage` that uses `hive_ce` for local data storage.
 
+### [Full Documentation](https://pub.dev/documentation/hyper_storage/latest)
+
 ## Features
 
 -   **Persistent Storage:** Persists data on the device using Hive.

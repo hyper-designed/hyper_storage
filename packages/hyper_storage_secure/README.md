@@ -5,6 +5,8 @@
 
 A backend for `hyper_storage` that uses `flutter_secure_storage` for secure data storage.
 
+### [Full Documentation](https://pub.dev/documentation/hyper_storage/latest)
+
 ## Features
 
 -   **Secure Storage:** Securely persists data on the device using `flutter_secure_storage`.

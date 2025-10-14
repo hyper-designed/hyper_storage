@@ -21,14 +21,11 @@ Listening to changes for a specific key allows you to react only when that parti
 
 ```dart
 // Register a listener for a specific key
-storage.addKeyListener
-('name
-'
-, onKeyChanged);
+storage.addKeyListener('name', onKeyChanged);
 
 void onKeyChanged() async {
-final newValue = await storage.getString('name');
-print('The value of "name" has changed to: $newValue');
+  final newValue = await storage.getString('name');
+  print('The value of "name" has changed to: $newValue');
 }
 
 // unregister the listener
@@ -39,18 +36,14 @@ You can also listen to key changes in a named container:
 
 ```dart
 
-final container = await
-storage.container
-('user
-'
-);
+final container = await storage.container('user');
 
 // Register a listener for a specific key in the container
 container.addKeyListener('email', onEmailChanged);
 
 void onEmailChanged() async {
-final newEmail = await container.getString('email');
-print('The email has changed to: $newEmail');
+  final newEmail = await container.getString('email');
+  print('The email has changed to: $newEmail');
 }
 
 // unregister the listener
@@ -66,22 +59,15 @@ Item holders itself only holds a single value, so you don't need to specify a ke
 final itemHolder = storage.itemHolder<String>('status');
 
 // Register a listener for changes in the item holder
-itemHolder.addListener
-(
-onStatusChanged);
+itemHolder.addListener(onStatusChanged);
 
 void onStatusChanged() async {
-final newStatus = await itemHolder.get();
-print('The status has changed to: $newStatus');
+  final newStatus = await itemHolder.get();
+  print('The status has changed to: $newStatus');
 }
 
 // unregister the listener
-itemHolder
-.
-removeListener
-(
-onStatusChanged
-);
+itemHolder.removeListener(onStatusChanged);
 ```
 
 ## Listening to All Changes
@@ -90,47 +76,31 @@ You can listen to all changes in the storage, regardless of which key was modifi
 
 ```dart
 // Register a listener for all changes
-storage.addListener
-(
-onStorageChanged);
+storage.addListener(onStorageChanged);
 
 void onStorageChanged() {
-print('The storage has changed.');
+  print('The storage has changed.');
 }
 
 // unregister the listener
-storage
-.
-removeListener
-(
-onStorageChanged
-);
+storage.removeListener(onStorageChanged);
 ```
 
 You can also listen to all changes in a named container:
 
 ```dart
 
-final container = await
-storage.container
-('settings
-'
-);
+final container = await storage.container('settings');
 
 // Register a listener for all changes in the container
 container.addListener(onSettingsChanged);
 
 void onSettingsChanged() {
-print('The settings container has changed.');
+  print('The settings container has changed.');
 }
 
 // unregister the listener
-container
-.
-removeListener
-(
-onSettingsChanged
-);
+container.removeListener(onSettingsChanged);
 ```
 
 # Streaming Item Holder Changes
@@ -150,8 +120,7 @@ final subscription = itemHolder.listen((newStatus) {
 });
 
 // Don't forget to cancel the subscription when it's no longer needed
-subscription.cancel
-();
+subscription.cancel();
 ```
 
 ## Using with StreamBuilder in Flutter
@@ -251,8 +220,7 @@ StreamBuilder<String?>(
 
 This means calling `storage.stream('key')` directly in a build method is safe and will not create multiple streams.
 
-**Recommended Pattern: Use ItemHolder Directly**: If you have an `ItemHolder` for the key, you can use it directly in
-the `StreamBuilder`. This is the most efficient and clear approach.
+If you have an `ItemHolder` for the key, you can use it directly in the `StreamBuilder`. This is the most efficient and clear approach.
 
 ```dart
 class _MyWidgetState extends State<MyWidget> {
@@ -280,85 +248,6 @@ class _MyWidgetState extends State<MyWidget> {
   }
 }
 ```
-
-**Why ItemHolder is recommended:**
-
-- **Clear intent**: Makes it obvious you're using a managed stream
-- **Value caching**: Uses `BehaviorSubject` - new listeners get the cached value immediately
-- **Efficient**: Single persistent stream with lazy activation
-- **Multiple listeners**: Supports many concurrent listeners without duplicating work
-- **No error emissions**: Transient failures don't get cached and replayed
-
-### ✅ **Also Acceptable: Cache the stream in a variable**
-
-If you prefer to use the `stream()` method, you can cache it in a `late final` variable.
-Since `stream()` returns a cached `ItemHolder`, this is now equivalent to Pattern 1:
-
-```dart
-class MyWidget extends StatefulWidget {
-  @override
-  State<MyWidget> createState() => _MyWidgetState();
-}
-
-class _MyWidgetState extends State<MyWidget> {
-  // Cache the stream - actually returns the same ItemHolder as itemHolder<String>('name')
-  late final Stream<String?> nameStream = storage.stream<String>('name');
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<String?>(
-      stream: nameStream, // ✅ SAFE: Same cached ItemHolder instance
-      builder: (context, snapshot) {
-        return Text(snapshot.data ?? 'Unknown');
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    // If using stream(), you can cast to dispose if needed
-    if (nameStream is ItemHolder) {
-      (nameStream as ItemHolder).dispose();
-    }
-    super.dispose();
-  }
-}
-```
-
-### ✅ **Create stream in `initState()`**
-
-You can also create the stream in `initState()`:
-
-```dart
-class _MyWidgetState extends State<MyWidget> {
-  late Stream<String?> nameStream;
-
-  @override
-  void initState() {
-    super.initState();
-    nameStream = storage.stream<String>('name'); // Returns cached ItemHolder
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<String?>(
-      stream: nameStream, // ✅ SAFE: Same cached instance
-      builder: (context, snapshot) {
-        return Text(snapshot.data ?? 'Unknown');
-      },
-    );
-  }
-}
-```
-
-### Summary: Which pattern should you use?
-
-| Pattern                        | Recommended?                      | Notes                                                                      |
-|--------------------------------|-----------------------------------|----------------------------------------------------------------------------|
-| **ItemHolder directly**        | ✅ **Best**                        | Most explicit. Clear intent. Direct access to ItemHolder API.              |
-| **Cached stream (late final)** | ✅ Good                            | Same as above but less explicit. `stream()` returns ItemHolder internally. |
-| **initState stream**           | ✅ Good                            | Useful for complex initialization. Still returns cached ItemHolder.        |
-| **Direct stream() in build()** | ⚠️ **Acceptable but discouraged** | Now safe (returns cached instance) but not recommended for code clarity.   |
 
 ## Streaming with Serializable Containers
 

@@ -5,6 +5,8 @@
 
 A backend for `hyper_storage` that uses `shared_preferences` for Flutter applications.
 
+### [Full Documentation](https://pub.dev/documentation/hyper_storage/latest)
+
 ## Features
 
 -   **Persistent Storage:** Persists data on the device using `shared_preferences`.
