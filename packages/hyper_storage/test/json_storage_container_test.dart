@@ -577,6 +577,38 @@ void main() {
         expect(values2, contains(testUser1));
         expect(values2, contains(updated));
       });
+
+      test('stream() creates new holder after previous holder is closed', () async {
+        await userContainer.add(testUser1);
+
+        // Create first stream (creates first holder internally)
+        final stream1 = userContainer.stream(testUser1.id);
+        final values1 = <User?>[];
+        final sub1 = stream1.listen(values1.add);
+        await Future.delayed(Duration(milliseconds: 50));
+        await sub1.cancel();
+
+        // Get and dispose the holder created by stream
+        final holder1 = userContainer.itemHolder(testUser1.id);
+        holder1.dispose();
+
+        // Create second stream (should clean up closed holder and create new one)
+        final stream2 = userContainer.stream(testUser1.id);
+        final values2 = <User?>[];
+        final sub2 = stream2.listen(values2.add);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        // Update the value to verify the new stream is working
+        final updated = User(testUser1.id, 'Updated', testUser1.email, 31);
+        await userContainer.update(updated);
+        await Future.delayed(Duration(milliseconds: 50));
+
+        await sub2.cancel();
+
+        // Verify the second stream received both initial and updated values
+        expect(values2, contains(testUser1));
+        expect(values2, contains(updated));
+      });
     });
 
     group('streamAll', () {
