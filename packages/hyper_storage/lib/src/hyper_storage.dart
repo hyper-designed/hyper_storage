@@ -245,7 +245,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// - [container] for basic storage containers
   /// - [objectContainer] for custom serialization logic
   /// - [JsonStorageContainer] for available operations
-  Future<JsonStorageContainer<E>> jsonSerializableContainer<E>(
+  Future<JsonStorageContainer<E>> jsonSerializableContainer<E extends Object>(
     String name, {
     required ToJson<E> toJson,
     required FromJson<E> fromJson,
@@ -305,7 +305,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// - [container] for basic storage containers
   /// - [jsonSerializableContainer] for JSON serialization
   /// - [SerializableStorageContainer] for the base container class
-  Future<F> objectContainer<E, F extends SerializableStorageContainer<E>>(
+  Future<F> objectContainer<E extends Object, F extends SerializableStorageContainer<E>>(
     String name, {
     required F Function() factory,
   }) async {

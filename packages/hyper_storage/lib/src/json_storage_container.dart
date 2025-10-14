@@ -60,7 +60,7 @@ typedef ToJson<E> = Map<String, dynamic> Function(E object);
 /// - [HyperStorage.jsonSerializableContainer] for creating instances
 /// - [FromJson] and [ToJson] typedefs for serialization functions
 /// - [IdGetter] for custom ID extraction
-final class JsonStorageContainer<E> extends SerializableStorageContainer<E> {
+final class JsonStorageContainer<E extends Object> extends SerializableStorageContainer<E> {
   /// The function used to convert objects of type [E] to JSON maps.
   ///
   /// This function is called internally whenever an object needs to be

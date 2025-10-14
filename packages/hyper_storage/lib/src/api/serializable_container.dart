@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:meta/meta.dart';
 
 import '../generate_id.dart' as generator;
+import '../item_holder.dart';
 import 'api.dart';
 import 'storage_container.dart';
 
@@ -98,7 +99,8 @@ typedef DeserializeCallback<E> = E Function(String value);
 /// - [StorageContainer] for the base container functionality
 /// - [SerializableStorageOperationsApi] for the operation interface
 /// - [IdGetter] for custom ID extraction
-abstract class SerializableStorageContainer<E> extends StorageContainer implements SerializableStorageOperationsApi<E> {
+abstract class SerializableStorageContainer<E extends Object> extends StorageContainer
+    implements SerializableStorageOperationsApi<E> {
   /// An optional function that extracts the ID from an object.
   ///
   /// When provided, this function is used to determine the ID of objects
@@ -743,6 +745,7 @@ abstract class SerializableStorageContainer<E> extends StorageContainer implemen
   /// to avoid memory leaks.
   ///
   /// This can be done by cancelling the subscription to the stream.
+  // TODO: Optimize to be compatible with StreamBuilder.
   Stream<List<E>> streamAll() async* {
     final List<E> values = await getValues();
     yield values;
