@@ -121,6 +121,9 @@ abstract class SerializableStorageContainer<E extends Object> extends StorageCon
   /// behavior in testing scenarios.
   final Random _random;
 
+  /// Internal cache of item holders by their keys.
+  final Map<String, SerializableItemHolder<E>> _holders = {};
+
   /// Creates a new [SerializableStorageContainer].
   ///
   /// The constructor initializes a container for storing serializable objects
@@ -703,6 +706,9 @@ abstract class SerializableStorageContainer<E extends Object> extends StorageCon
   @override
   Future<void> close() async {
     removeAllListeners();
+    for (final holder in _holders.values) {
+      holder.dispose();
+    }
     await backend.close();
   }
 
@@ -714,27 +720,45 @@ abstract class SerializableStorageContainer<E extends Object> extends StorageCon
   /// to avoid memory leaks.
   ///
   /// This can be done by cancelling the subscription to the stream.
-  Stream<E?> stream(String key) async* {
-    final E? itemValue = await get(key);
-    yield itemValue;
+  Stream<E?> stream(String key) => itemHolder(key);
 
-    late final void Function() retrieveAndAdd;
-    final controller = StreamController<E?>(
-      onCancel: () => removeKeyListener(key, retrieveAndAdd),
+  /// Creates an item holder for storing a single primitive value at the specified key.
+  ///
+  /// [ItemHolder] provides a convenient API for managing a single item/key in the storage/container.
+  /// This makes it easier to pass around a fragment of the storage (without needing to reference
+  /// the entire storage/container) that knows how perform operations on that specific key.
+  ///
+  /// Note: Calling this method with the same key multiple times will return
+  /// the same instance of [JsonItemHolder] if it already exists, ensuring that
+  /// there is only one holder per key. If the existing holder has been closed,
+  /// a new instance will be created.
+  ///
+  /// Parameters:
+  ///   - [key]: The key under which to store the item. Must be non-empty and not only whitespace.
+  ///   This key is relative to the container (not encoded).
+  ///
+  /// Returns:
+  ///   A [ItemHolder] configured to manage the item at the specified key.
+  ///
+  /// Throws:
+  ///   - [ArgumentError] if the key is invalid.
+  SerializableItemHolder<E> itemHolder(String key) {
+    validateKey(key);
+    var existing = _holders[key];
+    if (existing != null && existing.isClosed) {
+      _holders.remove(key);
+      existing = null;
+    }
+    if (existing != null) return existing;
+
+    final holder = SerializableItemHolder<E>(
+      this,
+      encodeKey(key),
+      serialize: serialize,
+      deserialize: deserialize,
     );
-
-    retrieveAndAdd = () async {
-      if (controller.isClosed) return;
-      final E? value = await get(key);
-      if (!controller.isClosed) {
-        controller.add(value);
-      }
-    };
-
-    addKeyListener(key, retrieveAndAdd);
-
-    yield* controller.stream;
-    await controller.close(); // coverage:ignore-line
+    _holders[key] = holder;
+    return holder;
   }
 
   /// Provides a [Stream] of values for all items in the container.
