@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hyper_storage_shared_preferences/shared_preferences_backend.dart';
+import 'package:hyper_storage_shared_preferences/hyper_storage_shared_preferences.dart';
 
 import 'mock_shared_preferences.dart';
 
