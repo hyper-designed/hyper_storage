@@ -74,8 +74,10 @@ void main() async {
 }
 ```
 
-> Hive backend requires initialization of Hive before use. Hyper Storage do not handle Hive initialization for you.
-> You need to initialize Hive in your application before using the Hive backend. For example:
+### IMPORTANT
+> Hive backend requires initialization of Hive before use. Hyper Storage doesn't handle Hive initialization for you as
+> the initialization depends on whether the project is being used in Flutter or pure Dart environment.
+> You need to initialize Hive in your application before using the Hive backend.
 
 ## [Secure Storage Backend](https://pub.dev/packages/hyper_storage_secure):
 
@@ -121,7 +123,7 @@ requirements.
 
 ```dart
 // Define your custom backend by implementing the StorageBackend interface.
-class YourCustomBackend implements StorageBackend {
+class YourCustomBackend extends StorageBackend {
   // Implement all required methods here.
 }
 ```
