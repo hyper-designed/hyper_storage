@@ -86,7 +86,7 @@ void onStorageChanged() {
 storage.removeListener(onStorageChanged);
 ```
 
-You can also listen to all changes in a named container:
+You can also listen to all changes in a container:
 
 ```dart
 
@@ -142,12 +142,21 @@ StreamBuilder<String?>(
 ```
 
 **Note**: Unlike traditional streams, ItemHolder does **not** emit errors during value retrieval. This prevents
-transient failures (like network issues) from being cached and replayed to future listeners. The stream simply
-retains its last valid value and retries on the next update.
+transient failures from being cached and replayed to future listeners. The stream simply retains its last valid 
+value and retries on the next update.
 
 ## Converting Item Holder to a ValueNotifier
 
 You can convert an `ItemHolder` to a `ValueNotifier` for easier integration with Flutter's state management.
+
+For this, you need to import the `hyper_storage_flutter` package:
+
+```yaml
+dependencies:
+  hyper_storage_flutter: ^<latest_version>
+```
+
+Then you can use the `asValueNotifier` extension method:
 
 ```dart
 final itemHolder = storage.itemHolder<String>('status');
@@ -218,9 +227,9 @@ StreamBuilder<String?>(
 );
 ```
 
-This means calling `storage.stream('key')` directly in a build method is safe and will not create multiple streams.
+> This means calling `storage.stream('key')` directly in a build method is safe and will not create multiple streams.
 
-If you have an `ItemHolder` for the key, you can use it directly in the `StreamBuilder`. This is the most efficient and clear approach.
+> If you have an `ItemHolder` for the key, you can use it directly in the `StreamBuilder`. This is the most efficient and clear approach.
 
 ```dart
 class _MyWidgetState extends State<MyWidget> {
@@ -269,6 +278,10 @@ final allTodosSubscription = todos.streamAll().listen((items) {
 // Don't forget to cancel the subscription when it's no longer needed.
 allTodosSubscription.cancel();
 ```
+
+> Note: Unlike `stream<T>(key)`, the `streamAll()` method does create a new stream instance each time it's called. 
+> It is **NOT SAFE** to call `streamAll()` directly in a build method or frequently. Instead, create the stream once 
+> and reuse it.
 
 You can also stream changes for a specific key in a `SerializableStorageContainer`:
 
