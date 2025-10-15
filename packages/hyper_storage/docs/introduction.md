@@ -17,11 +17,11 @@ without changing your application code.
 
 # Table of Contents
 
-- [Getting Started](getting_started.md)
-- [Backends](backends.md)
-- [Item Holders](item_holders.md)
-- [Containers](containers.md)
-- [Reactivity](reactivity.md)
+- [Getting Started](Getting%20Started-topic.html)
+- [Backends](Backends-topic.html)
+- [Item Holders](Item%20Holders-topic.html)
+- [Containers](Containers-topic.html)
+- [Reactivity](Reactivity-topic.html)
 
 # License
 

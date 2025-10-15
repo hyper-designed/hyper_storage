@@ -149,7 +149,7 @@ value and retries on the next update.
 
 You can convert an `ItemHolder` to a `ValueNotifier` for easier integration with Flutter's state management.
 
-For this, you need to import the `hyper_storage_flutter` package:
+For this, you need to import the [`hyper_storage_flutter`](https://pub.dev/packages/hyper_storage_flutter) package:
 
 ```yaml
 dependencies:
@@ -177,7 +177,7 @@ ValueListenableBuilder<String?>(
 > multiple instances, consider storing the `ValueNotifier` in a variable and reusing it. Remember to dispose the
 > `ValueNotifier` once you no longer need it.
 >
-> Make sure to add `hyper_storage_flutter` package to your dependencies to use `asValueNotifier` method.
+> Make sure to add [`hyper_storage_flutter`](https://pub.dev/packages/hyper_storage_flutter) package to your dependencies to use `asValueNotifier` method.
 
 ## Streaming key changes
 
