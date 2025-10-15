@@ -413,7 +413,7 @@ void main() {
       test('clear removes all data from storage and containers', () async {
         final storage = HyperStorage.instance;
         final container = await storage.container('test');
-        final jsonContainer = await storage.jsonSerializableContainer<User>(
+        final jsonContainer = await storage.jsonContainer<User>(
           'users',
           toJson: (user) => user.toJson(),
           fromJson: User.fromJson,
@@ -715,7 +715,7 @@ void main() {
         final storage = HyperStorage.instance;
 
         // Create a container for User type
-        await storage.jsonSerializableContainer<User>(
+        await storage.jsonContainer<User>(
           'users',
           toJson: (user) => user.toJson(),
           fromJson: User.fromJson,
@@ -723,7 +723,7 @@ void main() {
 
         // Try to create another container with same name but different type
         expect(
-          () => storage.jsonSerializableContainer<Product>(
+          () => storage.jsonContainer<Product>(
             'users',
             toJson: (product) => product.toJson(),
             fromJson: Product.fromJson,

@@ -62,7 +62,7 @@ Containers also support storing and retrieving JSON serializable objects. You ca
 store complex data structures in a structured way. For example, storing a list of Todo items with `Todo` class.
 
 ```dart
-final todos = await storage.jsonSerializableContainer<Todo>(
+final todos = await storage.jsonContainer<Todo>(
   'todos',
   fromJson: Todo.fromJson,
   toJson: (todo) => todo.toJson(),
@@ -79,7 +79,7 @@ By default, serializable containers would generate a unique String ID for each o
 also provide a custom ID by providing a `idGetter` function when creating the container.
 
 ```dart
-final todos = await storage.jsonSerializableContainer<Todo>(
+final todos = await storage.jsonContainer<Todo>(
   'todos',
   fromJson: Todo.fromJson,
   toJson: (todo) => todo.toJson(),
@@ -144,7 +144,7 @@ This is done to isolate the keys into a namespace, preventing key collisions bet
 change the delimiter for serializable containers by providing the `delimiter` argument when creating them.
 
 ```dart
-final todos = await storage.jsonSerializableContainer<Todo>(
+final todos = await storage.jsonContainer<Todo>(
   'todos',
   fromJson: Todo.fromJson,
   toJson: (todo) => todo.toJson(),

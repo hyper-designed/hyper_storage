@@ -265,7 +265,7 @@ object.
 
 ```dart
 
-final todos = await storage.jsonSerializableContainer<Todo>('todos', 
+final todos = await storage.jsonContainer<Todo>('todos', 
   fromJson: Todo.fromJson,
   toJson: (todo) => todo.toJson(),
 );
@@ -287,7 +287,7 @@ You can also stream changes for a specific key in a `SerializableStorageContaine
 
 ```dart
 
-final todos = await storage.jsonSerializableContainer<Todo>('todos',
+final todos = await storage.jsonContainer<Todo>('todos',
   fromJson: Todo.fromJson,
   toJson: (todo) => todo.toJson(),
 );

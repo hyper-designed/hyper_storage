@@ -59,7 +59,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// Cache of serializable object containers indexed by name.
   ///
   /// This map stores [SerializableStorageContainer] instances created through
-  /// [jsonSerializableContainer] or [objectContainer] methods. Containers are
+  /// [jsonContainer] or [objectContainer] methods. Containers are
   /// cached to ensure the same instance is returned for repeated requests with
   /// the same name, maintaining consistency of listeners and state.
   final Map<String, SerializableStorageContainer> _objectContainers = {};
@@ -195,7 +195,7 @@ class HyperStorage extends _HyperStorageImpl {
   ///   Otherwise, a new container is created and cached.
   ///
   /// See also:
-  /// - [jsonSerializableContainer] for storing custom objects with JSON
+  /// - [jsonContainer] for storing custom objects with JSON
   /// - [objectContainer] for custom serialization logic
   /// - [StorageContainer] for available operations
   Future<HyperStorageContainer> container(String name) async {
@@ -245,7 +245,7 @@ class HyperStorage extends _HyperStorageImpl {
   /// - [container] for basic storage containers
   /// - [objectContainer] for custom serialization logic
   /// - [JsonStorageContainer] for available operations
-  Future<JsonStorageContainer<E>> jsonSerializableContainer<E extends Object>(
+  Future<JsonStorageContainer<E>> jsonContainer<E extends Object>(
     String name, {
     required ToJson<E> toJson,
     required FromJson<E> fromJson,
@@ -303,7 +303,7 @@ class HyperStorage extends _HyperStorageImpl {
   ///
   /// See also:
   /// - [container] for basic storage containers
-  /// - [jsonSerializableContainer] for JSON serialization
+  /// - [jsonContainer] for JSON serialization
   /// - [SerializableStorageContainer] for the base container class
   Future<F> objectContainer<E extends Object, F extends SerializableStorageContainer<E>>(
     String name, {

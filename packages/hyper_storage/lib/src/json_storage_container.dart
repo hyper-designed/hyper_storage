@@ -57,7 +57,7 @@ typedef ToJson<E> = Map<String, dynamic> Function(E object);
 ///
 /// See also:
 /// - [SerializableStorageContainer] for the base class
-/// - [HyperStorage.jsonSerializableContainer] for creating instances
+/// - [HyperStorage.jsonContainer] for creating instances
 /// - [FromJson] and [ToJson] typedefs for serialization functions
 /// - [IdGetter] for custom ID extraction
 final class JsonStorageContainer<E extends Object> extends SerializableStorageContainer<E> {
@@ -113,7 +113,7 @@ final class JsonStorageContainer<E extends Object> extends SerializableStorageCo
   ///     on the backend is used.
   ///
   /// Note: Typically, you would create containers using
-  /// [HyperStorage.jsonSerializableContainer] rather than calling this
+  /// [HyperStorage.jsonContainer] rather than calling this
   /// constructor directly, as that method handles caching and ensures
   /// singleton behavior per container name.
   JsonStorageContainer({

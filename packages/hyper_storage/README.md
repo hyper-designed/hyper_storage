@@ -233,7 +233,7 @@ class User {
   Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
-final users = await storage.jsonSerializableContainer<User>(
+final users = await storage.jsonContainer<User>(
   'users',
   fromJson: User.fromJson,
   toJson: (user) => user.toJson(),
