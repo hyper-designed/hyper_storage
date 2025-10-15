@@ -29,11 +29,24 @@ Then, run `flutter pub get` or `dart pub get`.
 
 Initialize `hyper_storage` with `HiveBackend`.
 
+### IMPORTANT
+> Hive backend requires initialization of Hive before use. Hyper Storage doesn't handle Hive initialization for you as
+> the initialization depends on whether the project is being used in Flutter or pure Dart environment.
+> You need to initialize Hive in your application before using the Hive backend.
+
 ```dart
 import 'package:hyper_storage/hyper_storage.dart';
 import 'package:hyper_storage_hive/hyper_storage_hive.dart';
 
 void main() async {
+  
+  // IMPORTANT:
+  // Hive.initFlutter() or Hive.init() must be called before using HiveBackend.
+  // For Flutter:
+  // await Hive.initFlutter();
+  // For pure Dart:
+  // Hive.init('path_to_hive_boxes');
+  
   // Initialize the storage with HiveBackend
   final storage = await HyperStorage.init(backend: HiveBackend());
 
