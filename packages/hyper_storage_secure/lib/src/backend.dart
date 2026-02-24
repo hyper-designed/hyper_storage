@@ -24,9 +24,9 @@ class SecureStorageBackend extends StorageBackend {
   SecureStorageBackend({FlutterSecureStorage? storage})
     : storage =
           storage ??
-          FlutterSecureStorage(
-            aOptions: const AndroidOptions(encryptedSharedPreferences: true),
-            iOptions: const IOSOptions(accessibility: KeychainAccessibility.unlocked),
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions.defaultOptions,
+            iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked),
           );
 
   @override
